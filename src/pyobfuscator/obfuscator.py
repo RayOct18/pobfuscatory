@@ -14,28 +14,28 @@ def generate_random_string():
 
 
 class Obfuscator:
-    def __init__(self, project, path, test=False):
+    def __init__(self, project, path, target=None):
         self.project = project
         self.path = path
-        self.test = test
+        self.target = target
 
     def obfuscate(self):
         self._scan()
         self._convert()
-        if self.test:
-            self.path = self.path.replace("source", "generated")
+        if self.target:
+            self.path = self.path.replace(self.project, self.target)
         clean_empty_folder(self.path)
 
     def _process_file(self, func, **kwargs):
         if self.path.endswith(".py"):
             file_dir = self.path
-            func(file_dir, *kwargs)
+            func(file_dir, **kwargs)
         else:
             for root, dirs, files in os.walk(self.path):
                 for filename in files:
                     file_dir = os.path.join(root, filename)
-                    if kwargs.get("test"):
-                        func(file_dir, kwargs["test"])
+                    if kwargs.get("target"):
+                        func(file_dir, kwargs["project"], kwargs["target"])
                     else:
                         if filename != '__init__.py':
                             func(file_dir)
@@ -44,7 +44,7 @@ class Obfuscator:
         self._process_file(Scan(self.project).run)
 
     def _convert(self):
-        self._process_file(convert, test=self.test)
+        self._process_file(convert, project=self.project, target=self.target)
 
 
 class Scan:
@@ -104,9 +104,9 @@ class ScanPyVar(Scan):
             self.keys.add(var)
 
 
-def convert(file_dir, test=False):
+def convert(file_dir, project, target=None):
     lines = replace(file_dir)
-    save_file(lines, file_dir, test)
+    save_file(lines, file_dir, project, target)
 
 
 def replace(file_dir):
@@ -124,8 +124,8 @@ def regex_replace(line, source, target):
     return re.sub(rf"\b{source}\b", target, line)
 
 
-def save_file(lines, file_dir, test=False):
-    target_dir = file_dir.replace('source', 'generated') if test else file_dir
+def save_file(lines, file_dir, project, target=None):
+    target_dir = file_dir.replace(project, target) if target else file_dir
     folder = f"{os.sep}".join(target_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     with open(target_dir, 'w') as f:

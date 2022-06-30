@@ -19,7 +19,7 @@ def run_around_tests():
 def test_function():
     ori_result = function.add(2, 3)
     ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, test=True)
+    obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["add"])(2, 3)
@@ -29,12 +29,12 @@ def test_function():
 def test_package():
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
-    obfus = Obfuscator('package', os.path.join("source", "package"), test=True)
+    obfus = Obfuscator('source', "source", "generated")
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["foo"])(1, 2, 3)
     assert result == ori_result
-    assert len(list(os.walk("generated/package"))) == 2
+    assert len(list(os.walk("generated"))) == 3
 
 
 def test_clean_empty_folder():
