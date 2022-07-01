@@ -7,6 +7,7 @@ import string
 mapping_table = {"source": "generated"}
 unique_str = set()
 test_path_map = {}
+special_key = ("__init__", "self")
 
 
 def generate_random_string():
@@ -67,6 +68,7 @@ class Scan:
             lines = f.readlines()
 
         for line in lines:
+            line = line.replace(' ', '')
             for subclass in Scan.__subclasses__():
                 subclass(self.project)._execute(line)
 
@@ -77,7 +79,7 @@ class Scan:
 
     def _update_mapping_table(self):
         for func_name in self.keys:
-            if func_name not in mapping_table:
+            if func_name not in mapping_table and func_name not in special_key:
                 random_string = generate_random_string()
                 while random_string in unique_str:
                     random_string = generate_random_string()
@@ -88,7 +90,7 @@ class Scan:
 class ScanPyFunc(Scan):
     def _execute(self, line):
         if line.startswith("def"):
-            func = line.replace(' ', '')[3:]
+            func = line[3:]
             pare_start, pare_end = func.index('('), func.index(')')
             func_name = func[:pare_start]
             self.keys.add(func_name)
@@ -99,9 +101,22 @@ class ScanPyFunc(Scan):
 class ScanPyVar(Scan):
     def _execute(self, line):
         if "=" in line and not line.startswith("def"):
-            statement = line.replace(' ', '')
-            var = statement[:statement.index("=")]
+            var = line[:line.index("=")]
             self.keys.add(var)
+
+
+class ScanPyClass(Scan):
+    def _execute(self, line):
+        if line.startswith("class"):
+            cls = line[5:]
+            try:
+                pare_start, pare_end = cls.index('('), cls.index(')')
+                for func_name in cls[pare_start + 1:pare_end].split(','):
+                    self.keys.add(func_name)
+            except ValueError:
+                pare_start, pare_end = -1, -1
+            func_name = cls[:pare_start]
+            self.keys.add(func_name)
 
 
 def convert(file_dir, project, target=None):
@@ -136,7 +151,8 @@ def save_file(lines, file_dir, project, target=None):
             d = os.path.splitext(d)[0]
         if d in mapping_table:
             obfuscate_dir[i] = mapping_table[d]
-    obfuscate_dir = f'{os.sep}'.join(obfuscate_dir) + ".py"
+    obfuscate_dir = f'{os.sep}'.join(obfuscate_dir)
+    obfuscate_dir = obfuscate_dir if obfuscate_dir.endswith(".py") else obfuscate_dir + ".py"
     folder = f"{os.sep}".join(obfuscate_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     os.rename(target_dir, obfuscate_dir)
@@ -151,4 +167,10 @@ def clean_empty_folder(root):
         try:
             os.rmdir(folder[0])
         except OSError:
+            pass
+    # clean root folder
+    if folders:
+        try:
+            os.rmdir(folders[0][0])
+        except (FileNotFoundError, OSError):
             pass
