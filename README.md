@@ -1,7 +1,9 @@
 # PyObfuscator
 
 ## TODO
-- [ ] process files are not belong python
+- [ ] insert confuse code
+- [x] clean comment
+- [x] process files are not belong python
 - [x] change these name to random string
     - [x] package
     - [x] file

@@ -7,7 +7,7 @@ import string
 mapping_table = {"source": "generated"}
 unique_str = set()
 test_path_map = {}
-special_key = ("__init__", "self")
+special_key = ("__init__", "self", "", "'", '"')
 
 
 def generate_random_string():
@@ -72,7 +72,7 @@ class Scan:
             for subclass in Scan.__subclasses__():
                 subclass(self.project)._execute(line)
 
-            self._update_mapping_table()
+        self._update_mapping_table()
 
     def _execute(self, line):
         raise NotImplementedError
@@ -129,10 +129,37 @@ def replace(file_dir):
         lines = f.readlines()
 
     for i, line in enumerate(lines):
-        for k, v in mapping_table.items():
-            line = regex_replace(line, k, v)
-        lines[i] = line
+        replace_keys(i, lines)
+        remove_single_comment(i, lines)
+        remove_multi_line_comment(i, lines)
     return lines
+
+
+def replace_keys(i, lines):
+    line = lines[i]
+    for k, v in mapping_table.items():
+        line = regex_replace(line, k, v)
+    lines[i] = line
+
+
+def remove_single_comment(i, lines):
+    line = lines[i].strip()
+    if line.startswith("#"):
+        lines[i] = ''
+    else:
+        lines[i] = re.sub(r'#.*', '\n', lines[i])
+
+
+def remove_multi_line_comment(i, lines):
+    line = lines[i].strip()
+    if len(line) > 3 and line.startswith('"""') and line.endswith('"""'):
+        lines[i] = ''
+    elif line.startswith('"""'):
+        lines[i] = ''
+        while not lines[i].strip().endswith('"""'):
+            lines[i] = ''
+            i += 1
+        lines[i] = ''
 
 
 def regex_replace(line, source, target):
@@ -152,7 +179,8 @@ def save_file(lines, file_dir, project, target=None):
         if d in mapping_table:
             obfuscate_dir[i] = mapping_table[d]
     obfuscate_dir = f'{os.sep}'.join(obfuscate_dir)
-    obfuscate_dir = obfuscate_dir if obfuscate_dir.endswith(".py") else obfuscate_dir + ".py"
+    if target_dir.endswith(".py"):
+        obfuscate_dir = obfuscate_dir if obfuscate_dir.endswith(".py") else obfuscate_dir + ".py"
     folder = f"{os.sep}".join(obfuscate_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     os.rename(target_dir, obfuscate_dir)
