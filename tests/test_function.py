@@ -11,10 +11,14 @@ from source.package import foo
 from source.classes import A, B
 from source.comment import comment
 from source.multi_comment import multi_comment
+from source import special_var
 
 
 @pytest.fixture(autouse=True)
 def run_around_tests():
+    obfuscator.mapping_table = {"source": "generated"}
+    obfuscator.unique_str = set()
+    obfuscator.test_path_map = {}
     yield
     shutil.rmtree("generated")
 
@@ -89,3 +93,32 @@ def test_remove_multi_comment():
     obfus.obfuscate()
     with open(obfuscator.test_path_map[ori_path], 'r') as f:
         assert len(f.readlines()) == 4
+
+
+def test_pycache_handle():
+    obfus = Obfuscator('source', os.path.join("source", "pycache"), "generated")
+    obfus.obfuscate()
+    os.makedirs("generated", exist_ok=True)
+    assert os.path.exists("generated/pycache/__pycache__") is True
+
+
+def test_preserve_function_name():
+    ori_result = foo.foo(1, 2, 3)
+    ori_path = os.path.abspath(inspect.getfile(foo))
+    obfus = Obfuscator('source', os.path.join("source", "package"), "generated", ["foo"])
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, "foo")(1, 2, 3)
+    assert result == ori_result
+    assert len(list(os.walk("generated"))) == 4
+    assert any(["foo.py" in d[-1] for d in list(os.walk("generated"))])
+
+
+def test_equal_inline():
+    ori_result = special_var.equal_inline(2, 3)
+    ori_path = os.path.abspath(inspect.getfile(special_var))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["equal_inline"])(2, 3)
+    assert result == ori_result
