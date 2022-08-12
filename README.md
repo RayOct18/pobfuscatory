@@ -3,7 +3,8 @@
 ## TODO
 - [ ] insert confuse code
 - [ ] preserve string
-- [ ] multiple line arguments
+- [ ] star unpack list
+- [x] multiple line arguments
 - [x] preserve specify filename
 - [x] open py only
 - [x] clean comment

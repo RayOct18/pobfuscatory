@@ -8,7 +8,7 @@ from pyobfuscator import obfuscator
 from pyobfuscator.obfuscator import Obfuscator, clean_empty_folder
 from source import function
 from source.package import foo
-from source.classes import A, B
+from source.classes import A, B, C
 from source.comment import comment
 from source.multi_comment import multi_comment
 from source import special_var
@@ -30,6 +30,16 @@ def test_function():
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["add"])(2, 3)
+    assert result == ori_result
+
+
+def test_multi_line_args():
+    ori_result = function.multiply(3, 3)
+    ori_path = os.path.abspath(inspect.getfile(function))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["multiply"])(3, 3)
     assert result == ori_result
 
 
@@ -76,6 +86,18 @@ def test_inherit_class():
     generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     cls = getattr(generated_cls, obfuscator.mapping_table["B"])(1, 2, 3)
     result = getattr(cls, obfuscator.mapping_table["add"])()
+    assert result == ori_result
+
+
+def test_class_multi_line_args():
+    a = C(2, 3)
+    ori_result = a.multiply()
+    ori_path = os.path.abspath(inspect.getfile(C))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    cls = getattr(generated_cls, obfuscator.mapping_table["C"])(2, 3)
+    result = getattr(cls, obfuscator.mapping_table["multiply"])()
     assert result == ori_result
 
 

@@ -67,17 +67,17 @@ class Scan:
             self._scan_external(file_dir)
 
             with open(file_dir, 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-
-            for line in lines:
-                logging.info(f"{file_dir}, {line}")
-                line = line.replace(' ', '')
-                for subclass in Scan.__subclasses__():
-                    subclass(self.project)._execute(line)
+                line = f.readline()
+                while line:
+                    logging.info(f"{file_dir}, {line}")
+                    line = line.replace(' ', '')
+                    for subclass in Scan.__subclasses__():
+                        subclass(self.project)._execute(line, f)
+                    line = f.readline()
 
             self._update_mapping_table()
 
-    def _execute(self, line):
+    def _execute(self, line, f):
         raise NotImplementedError
 
     def _update_mapping_table(self):
@@ -91,18 +91,29 @@ class Scan:
 
 
 class ScanPyFunc(Scan):
-    def _execute(self, line):
+    def _execute(self, line, f):
         if line.startswith("def"):
             func = line[3:]
-            pare_start, pare_end = func.index('('), func.index(')')
+            pare_start = func.index('(')
             func_name = func[:pare_start]
             self.keys.add(func_name)
-            for func_name in func[pare_start + 1:pare_end].split(','):
-                self.keys.add(func_name.split("=")[0].strip())
+
+            try:
+                pare_end = func.index(')')
+                for arg in func[pare_start + 1:pare_end].split(','):
+                    self.keys.add(arg.split("=")[0].strip())
+            except ValueError:
+                while not func.strip().endswith("):"):
+                    for arg in func[pare_start+1:].split(','):
+                        self.keys.add(arg.split("=")[0].strip())
+                    pare_start = -1
+                    func = f.readline().replace(' ', '')
+                for arg in func[:-2].split(','):
+                    self.keys.add(arg.split("=")[0].strip())
 
 
 class ScanPyVar(Scan):
-    def _execute(self, line):
+    def _execute(self, line, f):
         if "=" in line and not line.startswith("def") and not self._is_equal_in_parentheses(line):
             varstring = line[:line.index("=")]
             for c in ("*", "(", ")"):
@@ -122,9 +133,9 @@ class ScanPyVar(Scan):
 
 
 class ScanPyClass(Scan):
-    def _execute(self, line):
+    def _execute(self, line, f):
         if line.startswith("class"):
-            cls = line[5:]
+            cls = line.strip()[5:]
             try:
                 pare_start, pare_end = cls.index('('), cls.index(')')
                 for func_name in cls[pare_start + 1:pare_end].split(','):

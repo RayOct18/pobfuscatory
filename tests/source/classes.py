@@ -16,3 +16,14 @@ class B(A):
 
     def add(self):
         return self.a + self.b * self.c
+
+
+class C:
+    def __init__(self,
+                 d,
+                 e=0):
+        self.d = d
+        self.e = e
+
+    def multiply(self):
+        return self.d * self.e
