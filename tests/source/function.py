@@ -5,24 +5,24 @@ def add(arg1, arg2):
     return var1 + var2
 
 
-def multiply(x,
-             y,
-             z=3):
-    return x * y * z
+def multiply(x1,
+             y1,
+             z1=3):
+    return x1 * y1 * z1
 
 
-def assign_value_to_list(x):
-    l = list(range(5))
-    l[0] = x
-    return l
+def assign_value_to_list(x2):
+    l1 = list(range(5))
+    l1[0] = x2
+    return l1
 
 
-def assign_value_to_matrix(x, y):
-    l = [[0, 1], [2, 3]]
-    l[0][1] += (x - y) / 2
-    return l
+def assign_value_to_matrix(x3, y3):
+    l2 = [[0, 1], [2, 3]]
+    l2[0][1] += (x3 - y3) / 2
+    return l2
 
 
-def string(x, y):
-    z = x + y
-    return f"print x: {x}, y: {y}, z: {z}"
+def string(x4, y4):
+    z4 = x4 + y4
+    return f"print x4: {x4}, y4: {y4}, z4: {z4}"
