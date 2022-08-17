@@ -144,3 +144,12 @@ def test_equal_inline():
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["equal_inline"])(2, 3)
     assert result == ori_result
+
+def test_unpack_list():
+    ori_result = special_arg.unpack_list()
+    ori_path = os.path.abspath(inspect.getfile(special_arg))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["unpack_list"])()
+    assert result == ori_result

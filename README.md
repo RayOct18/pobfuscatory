@@ -2,8 +2,10 @@
 
 ## TODO
 - [ ] insert confuse code
-- [ ] preserve string
-- [ ] star unpack list
+- [ ] preserve string (don't replace key in quotes)
+- [ ] assign value into list (mat_rotation[0, 2] += (rotate_w - w) / 2)
+- [ ] dynamic arguments (*arg, **kwargs)
+- [x] star unpack list (a, b, *c, _ = ...)
 - [x] multiple line arguments
 - [x] preserve specify filename
 - [x] open py only
@@ -15,9 +17,3 @@
     - [x] function
     - [x] variable
     - [x] class
-
-Add var test case
-- a, b, *c, _ = ...
-- mat_rotation[0, 2] += (rotate_w - w) / 2
-- **args
-- don't replace key in quotes
