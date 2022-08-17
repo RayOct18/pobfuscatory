@@ -1,5 +1,6 @@
 *.egg-info
 .idea
-__py*
+__py
+!tests/source/pycache/__pycache__
 build
 *.py[cod]

@@ -11,7 +11,7 @@ from source.package import foo
 from source.classes import A, B, C
 from source.comment import comment
 from source.multi_comment import multi_comment
-from source import special_var
+from source import special_arg
 
 
 @pytest.fixture(autouse=True)
@@ -137,8 +137,8 @@ def test_preserve_function_name():
 
 
 def test_equal_inline():
-    ori_result = special_var.equal_inline(2, 3)
-    ori_path = os.path.abspath(inspect.getfile(special_var))
+    ori_result = special_arg.equal_inline(2, 3)
+    ori_path = os.path.abspath(inspect.getfile(special_arg))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
