@@ -21,3 +21,8 @@ def assign_value_to_matrix(x, y):
     l = [[0, 1], [2, 3]]
     l[0][1] += (x - y) / 2
     return l
+
+
+def string(x, y):
+    z = x + y
+    return f"print x: {x}, y: {y}, z: {z}"
