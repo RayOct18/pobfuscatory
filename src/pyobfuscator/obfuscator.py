@@ -50,7 +50,7 @@ class Scan:
 
     def __init__(self, project, exclude_keys=None):
         self.project = project
-        self.special_key = {"__init__", "self", "", "'", '"', "_", "**args"}
+        self.special_key = {"__init__", "self", "", "'", '"', "_", "*args", "**kwargs"}
         if isinstance(exclude_keys, (list, tuple)):
             for key in exclude_keys:
                 self.special_key.add(key)

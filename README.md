@@ -3,8 +3,8 @@
 ## TODO
 - [ ] insert confuse code
 - [ ] preserve string (don't replace key in quotes)
-- [ ] assign value into list (mat_rotation[0, 2] += (rotate_w - w) / 2)
-- [ ] dynamic arguments (*arg, **kwargs)
+- [x] assign value into list (mat_rotation[0][2] += (rotate_w - w) / 2)
+- [x] dynamic arguments (*arg, **kwargs)
 - [x] star unpack list (a, b, *c, _ = ...)
 - [x] multiple line arguments
 - [x] preserve specify filename

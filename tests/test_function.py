@@ -43,6 +43,26 @@ def test_multi_line_args():
     assert result == ori_result
 
 
+def test_assign_value_to_list():
+    ori_result = function.assign_value_to_list(1)
+    ori_path = os.path.abspath(inspect.getfile(function))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["assign_value_to_list"])(1)
+    assert result == ori_result
+
+
+def test_assign_value_to_matrix():
+    ori_result = function.assign_value_to_matrix(1, 2)
+    ori_path = os.path.abspath(inspect.getfile(function))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["assign_value_to_matrix"])(1, 2)
+    assert result == ori_result
+
+
 def test_package():
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
@@ -145,6 +165,7 @@ def test_equal_inline():
     result = getattr(generated_func, obfuscator.mapping_table["equal_inline"])(2, 3)
     assert result == ori_result
 
+
 def test_unpack_list():
     ori_result = special_arg.unpack_list()
     ori_path = os.path.abspath(inspect.getfile(special_arg))
@@ -152,4 +173,16 @@ def test_unpack_list():
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["unpack_list"])()
+    assert result == ori_result
+
+
+def test_dynamic_args():
+    args = [1, 2]
+    kwargs = {"x": 1, "y": 2}
+    ori_result = special_arg.dynamic_args(*args, **kwargs)
+    ori_path = os.path.abspath(inspect.getfile(special_arg))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["dynamic_args"])(*args, **kwargs)
     assert result == ori_result
