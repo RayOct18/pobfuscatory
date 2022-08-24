@@ -73,6 +73,16 @@ def test_parse_string():
     assert result == ori_result
 
 
+def test_parse_multiline_string():
+    ori_result = function.multiline_string(1)
+    ori_path = os.path.abspath(inspect.getfile(function))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["multiline_string"])(1)
+    assert result == ori_result
+
+
 def test_package():
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))

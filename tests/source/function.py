@@ -26,3 +26,12 @@ def assign_value_to_matrix(x3, y3):
 def string(x4, y4):
     z4 = x4 + y4
     return f"print x4: {x4}, y4: {y4}, z4: {z4}"
+
+
+def multiline_string(x5):
+    s = "test1, x5\n" +\
+        "test2"
+    s += "test3 \
+          test4 x5  "
+    s += str(x5)
+    return s

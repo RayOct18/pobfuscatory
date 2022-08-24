@@ -2,7 +2,8 @@
 
 ## TODO
 - [ ] insert confuse code
-- [ ] preserve string (don't replace key in quotes)
+- [ ] refactor preserve string function
+- [x] preserve string (don't replace key in quotes)
 - [x] assign value into list (mat_rotation[0][2] += (rotate_w - w) / 2)
 - [x] dynamic arguments (*arg, **kwargs)
 - [x] star unpack list (a, b, *c, _ = ...)

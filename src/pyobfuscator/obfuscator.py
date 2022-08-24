@@ -115,7 +115,15 @@ class ScanPyFunc(Scan):
 class ScanPyVar(Scan):
     def _execute(self, line, f):
         if "=" in line and not line.startswith("def") and not self._is_equal_in_parentheses(line):
-            varstring = line[:line.index("=")]
+
+            ind = 0
+            for k in ("=", "+=", "-=", "/=", "*="):
+                try:
+                    ind = line.index(k)
+                except ValueError:
+                    pass
+
+            varstring = line[:ind]
             for c in ("*", "(", ")"):
                 varstring = varstring.replace(c, "")
             for var in varstring.split(","):
@@ -167,11 +175,39 @@ def replace(file_dir):
     with open(file_dir, 'r', encoding='utf-8') as f:
         lines = f.readlines()
 
-    for i, line in enumerate(lines):
+    for i in range(len(lines)):
+        replace_string_in_pattern(i, lines)  # TODO: refactor
         replace_keys(i, lines)
         remove_single_comment(i, lines)
         remove_multi_line_comment(i, lines)
     return lines
+
+
+def replace_string_in_pattern(i, lines):
+    line = lines[i]
+
+    patterns = (r'(?<=\B){.*?}(?=\B)', )
+    for pattern in patterns:
+        text = re.findall(pattern, lines[i])
+        if text:
+            for t in text:
+                ori_text = t
+                for k, v in mapping_table.items():
+                    t = regex_replace(t, k, v)
+                line = line.replace(ori_text, t)
+            lines[i] = line
+    patterns = (r'\w".*"', r"\w'.*'", r'".*"', r"'.*'", r"'.*\\$", r'".*\\$', r".*'", r'.*"')
+
+    for pattern in patterns:
+        text = re.findall(pattern, lines[i].strip())
+        if text:
+            for t in text:
+                ori_text = t
+                for k, v in mapping_table.items():
+                    t = regex_replace(t, k, v+"@")  # template replace
+                line = line.replace(ori_text, t)
+            lines[i] = line
+            break
 
 
 def replace_keys(i, lines):
@@ -179,6 +215,7 @@ def replace_keys(i, lines):
     for k, v in mapping_table.items():
         logging.debug(f"line: {line}, K: {k}, V: {v}")
         line = regex_replace(line, k, v)
+        line = line.replace(v+'@', k)  # undo template replace
     lines[i] = line
 
 
