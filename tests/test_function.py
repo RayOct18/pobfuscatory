@@ -20,7 +20,7 @@ def run_around_tests():
     obfuscator.unique_str = set()
     obfuscator.test_path_map = {}
     yield
-    shutil.rmtree("generated")
+    shutil.rmtree("tests/generated")
 
 
 def test_function():
@@ -86,19 +86,19 @@ def test_parse_multiline_string():
 def test_package():
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
-    obfus = Obfuscator('source', os.path.join("source", "package"), "generated")
+    obfus = Obfuscator('source', os.path.join("tests", "source", "package"), "generated")
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["foo"])(1, 2, 3)
     assert result == ori_result
-    assert len(list(os.walk("generated"))) == 4
+    assert len(list(os.walk("tests/generated"))) == 6
 
 
 def test_clean_empty_folder():
-    root = "generated/A"
-    os.makedirs("generated/A/b/bb/c")
-    os.makedirs("generated/A/a/aa")
-    with open("generated/A/b/test.txt", 'w') as f:
+    root = "tests/generated/A"
+    os.makedirs("tests/generated/A/b/bb/c")
+    os.makedirs("tests/generated/A/a/aa")
+    with open("tests/generated/A/b/test.txt", 'w') as f:
         f.write(" ")
     assert len(list(os.walk(root))) == 6
     clean_empty_folder(root)
@@ -158,22 +158,22 @@ def test_remove_multi_comment():
 
 
 def test_pycache_handle():
-    obfus = Obfuscator('source', os.path.join("source", "pycache"), "generated")
+    obfus = Obfuscator('source', os.path.join("tests", "source", "pycache"), "generated")
     obfus.obfuscate()
     os.makedirs("generated", exist_ok=True)
-    assert os.path.exists("generated/pycache/__pycache__") is True
+    assert os.path.exists("tests/generated/pycache/__pycache__") is True
 
 
 def test_preserve_function_name():
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
-    obfus = Obfuscator('source', os.path.join("source", "package"), "generated", ["foo"])
+    obfus = Obfuscator('source', os.path.join("tests", "source", "package"), "generated", ["foo"])
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, "foo")(1, 2, 3)
     assert result == ori_result
-    assert len(list(os.walk("generated"))) == 4
-    assert any(["foo.py" in d[-1] for d in list(os.walk("generated"))])
+    assert len(list(os.walk("tests/generated"))) == 6
+    assert any(["foo.py" in d[-1] for d in list(os.walk("tests/generated"))])
 
 
 def test_equal_inline():
