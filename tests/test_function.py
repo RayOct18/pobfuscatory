@@ -91,7 +91,7 @@ def test_package():
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["foo"])(1, 2, 3)
     assert result == ori_result
-    assert len(list(os.walk("tests/generated"))) == 6
+    assert len(list(os.walk("tests/generated"))) == 4
 
 
 def test_clean_empty_folder():
@@ -160,7 +160,7 @@ def test_remove_multi_comment():
 def test_pycache_handle():
     obfus = Obfuscator('source', os.path.join("tests", "source", "pycache"), "generated")
     obfus.obfuscate()
-    os.makedirs("generated", exist_ok=True)
+    os.makedirs("tests/generated", exist_ok=True)
     assert os.path.exists("tests/generated/pycache/__pycache__") is True
 
 
@@ -172,7 +172,7 @@ def test_preserve_function_name():
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, "foo")(1, 2, 3)
     assert result == ori_result
-    assert len(list(os.walk("tests/generated"))) == 6
+    assert len(list(os.walk("tests/generated"))) == 4
     assert any(["foo.py" in d[-1] for d in list(os.walk("tests/generated"))])
 
 
