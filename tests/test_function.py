@@ -216,3 +216,33 @@ def test_import_serial():
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["concat_path"])("x", "y")
     assert result == ori_result
+
+
+def test_from_import():
+    ori_result = imports.listdir("src")
+    ori_path = os.path.abspath(inspect.getfile(imports))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["list_dir"])("src")
+    assert result == ori_result
+
+
+def test_name_conflict():
+    ori_result = imports.name_conflict(1)
+    ori_path = os.path.abspath(inspect.getfile(imports))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["name_conflict"])(1)
+    assert result == ori_result
+
+
+def test_assign_library():
+    ori_result = imports.assign_library("x")
+    ori_path = os.path.abspath(inspect.getfile(imports))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["assign_library"])("x")
+    assert result == ori_result
