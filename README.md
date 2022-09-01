@@ -3,7 +3,7 @@
 ## TODO
 - [ ] insert confuse code
 - [ ] refactor preserve string function
-- [ ] preserve library function (os.path.join, re.fullmatch, ...)
+- [x] preserve library function (os.path.join, re.fullmatch, ...)
 - [x] preserve string (don't replace key in quotes)
 - [x] assign value into list (mat_rotation[0][2] += (rotate_w - w) / 2)
 - [x] dynamic arguments (*arg, **kwargs)

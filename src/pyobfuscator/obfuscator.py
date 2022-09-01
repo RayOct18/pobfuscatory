@@ -47,10 +47,11 @@ class Obfuscator:
 
 class Scan:
     keys = set()
+    import_key = set()
+    special_key = {"__init__", "self", "", "'", '"', "_", "*args", "**kwargs", "(", ")", "**args"}
 
     def __init__(self, project, exclude_keys=None):
         self.project = project
-        self.special_key = {"__init__", "self", "", "'", '"', "_", "*args", "**kwargs", "(", ")", "**args"}
         if isinstance(exclude_keys, (list, tuple)):
             for key in exclude_keys:
                 self.special_key.add(key)
@@ -70,7 +71,6 @@ class Scan:
                 line = f.readline()
                 while line:
                     logging.info(f"{file_dir}, {line}")
-                    line = line.replace(' ', '')
                     for subclass in Scan.__subclasses__():
                         subclass(self.project)._execute(line, f)
                     line = f.readline()
@@ -92,6 +92,7 @@ class Scan:
 
 class ScanPyFunc(Scan):
     def _execute(self, line, f):
+        line = line.replace(' ', '')
         if line.startswith("def"):
             func = line[3:]
             pare_start = func.index('(')
@@ -114,8 +115,8 @@ class ScanPyFunc(Scan):
 
 class ScanPyVar(Scan):
     def _execute(self, line, f):
+        line = line.replace(' ', '')
         if "=" in line and not line.startswith("def") and not self._is_equal_in_parentheses(line):
-
             ind = 0
             for k in ("=", "+=", "-=", "/=", "*="):
                 try:
@@ -142,6 +143,7 @@ class ScanPyVar(Scan):
 
 class ScanPyClass(Scan):
     def _execute(self, line, f):
+        line = line.replace(' ', '')
         if line.startswith("class"):
             cls = line.strip()[5:]
             try:
@@ -152,6 +154,27 @@ class ScanPyClass(Scan):
                 pare_start, pare_end = -1, -1
             func_name = cls[:pare_start]
             self.keys.add(func_name)
+
+
+class ScanImport(Scan):
+    def _execute(self, line, f):
+        line = line.strip().split()
+        # get library name
+        if line and line[0] in ("import", "from"):
+            for lib in line:
+                if lib.startswith(".") or lib.startswith(self.project):
+                    break
+                if lib not in ("import", "from"):
+                    for func in lib.split("."):
+                        self.special_key.add(func)
+                        self.import_key.add(func)
+        # get library methods
+        else:
+            for lib in line:
+                for k in self.import_key:
+                    if lib.startswith(k):
+                        for func in lib.split("(")[0].split("."):
+                            self.special_key.add(func)
 
 
 def convert(file_dir, project, target=None):

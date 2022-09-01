@@ -11,7 +11,7 @@ from source.package import foo
 from source.classes import A, B, C
 from source.comment import comment
 from source.multi_comment import multi_comment
-from source import special_arg
+from source import special_arg, imports
 
 
 @pytest.fixture(autouse=True)
@@ -205,4 +205,14 @@ def test_dynamic_args():
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, obfuscator.mapping_table["dynamic_args"])(*args, **kwargs)
+    assert result == ori_result
+
+
+def test_import_serial():
+    ori_result = imports.concat_path("x", "y")
+    ori_path = os.path.abspath(inspect.getfile(imports))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table["concat_path"])("x", "y")
     assert result == ori_result
