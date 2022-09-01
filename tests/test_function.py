@@ -6,12 +6,19 @@ from importlib.machinery import SourceFileLoader
 
 from pyobfuscator import obfuscator
 from pyobfuscator.obfuscator import Obfuscator, clean_empty_folder
-from source import function
 from source.package import foo
 from source.classes import A, B, C
-from source.comment import comment
-from source.multi_comment import multi_comment
-from source import special_arg, imports
+from source import function, comment, multi_comment, special_arg, imports
+
+
+def _compare_result(func, *args, **kwargs):
+    ori_result = func(*args, **kwargs)
+    ori_path = os.path.abspath(inspect.getfile(eval(func.__module__.split(".")[-1])))
+    obfus = Obfuscator('source', ori_path, 'generated')
+    obfus.obfuscate()
+    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfuscator.mapping_table[func.__name__])(*args, **kwargs)
+    assert result == ori_result
 
 
 @pytest.fixture(autouse=True)
@@ -24,63 +31,27 @@ def run_around_tests():
 
 
 def test_function():
-    ori_result = function.add(2, 3)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["add"])(2, 3)
-    assert result == ori_result
+    _compare_result(function.add, 2, 3)
 
 
 def test_multi_line_args():
-    ori_result = function.multiply(3, 3)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["multiply"])(3, 3)
-    assert result == ori_result
+    _compare_result(function.multiply, 3, 3)
 
 
 def test_assign_value_to_list():
-    ori_result = function.assign_value_to_list(1)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["assign_value_to_list"])(1)
-    assert result == ori_result
+    _compare_result(function.assign_value_to_list, 1)
 
 
 def test_assign_value_to_matrix():
-    ori_result = function.assign_value_to_matrix(1, 2)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["assign_value_to_matrix"])(1, 2)
-    assert result == ori_result
+    _compare_result(function.assign_value_to_matrix, 1, 2)
 
 
 def test_parse_string():
-    ori_result = function.string(1, 2)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["string"])(1, 2)
-    assert result == ori_result
+    _compare_result(function.string, 1, 2)
 
 
 def test_parse_multiline_string():
-    ori_result = function.multiline_string(1)
-    ori_path = os.path.abspath(inspect.getfile(function))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["multiline_string"])(1)
-    assert result == ori_result
+    _compare_result(function.multiline_string, 1)
 
 
 def test_package():
@@ -177,23 +148,11 @@ def test_preserve_function_name():
 
 
 def test_equal_inline():
-    ori_result = special_arg.equal_inline(2, 3)
-    ori_path = os.path.abspath(inspect.getfile(special_arg))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["equal_inline"])(2, 3)
-    assert result == ori_result
+    _compare_result(special_arg.equal_inline, 2, 3)
 
 
 def test_unpack_list():
-    ori_result = special_arg.unpack_list()
-    ori_path = os.path.abspath(inspect.getfile(special_arg))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["unpack_list"])()
-    assert result == ori_result
+    _compare_result(special_arg.unpack_list)
 
 
 def test_dynamic_args():
@@ -209,40 +168,16 @@ def test_dynamic_args():
 
 
 def test_import_serial():
-    ori_result = imports.concat_path("x", "y")
-    ori_path = os.path.abspath(inspect.getfile(imports))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["concat_path"])("x", "y")
-    assert result == ori_result
+    _compare_result(imports.concat_path, "x", "y")
 
 
 def test_from_import():
-    ori_result = imports.listdir("src")
-    ori_path = os.path.abspath(inspect.getfile(imports))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["list_dir"])("src")
-    assert result == ori_result
+    _compare_result(imports.from_import, "src")
 
 
 def test_name_conflict():
-    ori_result = imports.name_conflict(1)
-    ori_path = os.path.abspath(inspect.getfile(imports))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["name_conflict"])(1)
-    assert result == ori_result
+    _compare_result(imports.name_conflict, 1)
 
 
 def test_assign_library():
-    ori_result = imports.assign_library("x")
-    ori_path = os.path.abspath(inspect.getfile(imports))
-    obfus = Obfuscator('source', ori_path, 'generated')
-    obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["assign_library"])("x")
-    assert result == ori_result
+    _compare_result(imports.assign_library, "x")

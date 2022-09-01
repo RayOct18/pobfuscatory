@@ -6,7 +6,7 @@ def concat_path(path, file):
     return os.path.join(path, file)
 
 
-def list_dir(file_dir):
+def from_import(file_dir):
     return listdir(file_dir)
 
 
