@@ -3,7 +3,8 @@
 ## TODO
 - [ ] insert confuse code
 - [ ] refactor preserve string function
-- [ ] assign library to augment (o = os)
+- [ ] get all library key work
+- [ ] ~~assign library to augment (o = os)~~
 - [x] preserve library function (os.path.join, re.fullmatch, ...)
 - [x] preserve string (don't replace key in quotes)
 - [x] assign value into list (mat_rotation[0][2] += (rotate_w - w) / 2)
