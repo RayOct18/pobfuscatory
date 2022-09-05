@@ -3,7 +3,8 @@
 ## TODO
 - [ ] insert confuse code
 - [ ] refactor preserve string function
-- [ ] get all library key work
+- [ ] preserve file name
+- [x] get all library key word
 - [ ] ~~assign library to augment (o = os)~~
 - [x] preserve library function (os.path.join, re.fullmatch, ...)
 - [x] preserve string (don't replace key in quotes)

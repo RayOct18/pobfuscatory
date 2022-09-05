@@ -1,3 +1,4 @@
+import inspect
 import os
 import re
 import shutil
@@ -16,6 +17,25 @@ def generate_random_string():
     )
 
 
+def collect_keyword(extras=None):
+    seen = set()
+    stack = [("int", int), ("float", float), ("bool", bool), ("str", str)]
+    if extras is not None:
+        for extra in extras:
+            try:
+                stack.append((extra, eval(extra)))
+            except NameError:
+                pass
+    while stack:
+        key, obj = stack.pop()
+        if key not in seen:
+            seen.add(key)
+            for k, f in inspect.getmembers(obj):
+                if not k.startswith("_") and k not in seen and (inspect.isfunction(f) or inspect.ismodule(f)):
+                    stack.append((k, f))
+    return seen
+
+
 class Obfuscator:
     def __init__(self, project, path, target=None, exclude_keys=None):
         self.project = project
@@ -24,8 +44,18 @@ class Obfuscator:
         self.exclude_keys = exclude_keys
 
     def obfuscate(self):
-        self._scan()
-        self._convert()
+        scan = Scan(self.project, exclude_keys=self.exclude_keys)
+        # scan all files
+        self._process_file(scan.run)
+        # collect library keyword
+        keyword = collect_keyword(scan.import_key)
+        scan.special_key.update(keyword)
+        # generate random word map
+        scan.update_mapping_table()
+        # convert files
+        self._process_file(
+            lambda x: convert(x, project=self.project, target=self.target)
+        )
         if self.target:
             self.path = self.path.replace(self.project, self.target)
         clean_empty_folder(self.path)
@@ -39,14 +69,6 @@ class Obfuscator:
                 for filename in files:
                     file_dir = os.path.join(root, filename)
                     func(file_dir)
-
-    def _scan(self):
-        self._process_file(Scan(self.project, exclude_keys=self.exclude_keys).run)
-
-    def _convert(self):
-        self._process_file(
-            lambda x: convert(x, project=self.project, target=self.target)
-        )
 
 
 class Scan:
@@ -91,12 +113,10 @@ class Scan:
                         subclass(self.project)._execute(line, f)
                     line = f.readline()
 
-            self._update_mapping_table()
-
     def _execute(self, line, f):
         raise NotImplementedError
 
-    def _update_mapping_table(self):
+    def update_mapping_table(self):
         for func_name in self.keys:
             if func_name not in mapping_table and func_name not in self.special_key:
                 random_string = generate_random_string()
@@ -188,6 +208,7 @@ class ScanImport(Scan):
                     for func in lib.split("."):
                         self.special_key.add(func)
                         self.import_key.add(func)
+            exec(" ".join(line))
         # get library methods
         else:
             for lib in line:
