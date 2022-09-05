@@ -35,3 +35,7 @@ def multiline_string(x5):
           test4 x5  "
     s += str(x5)
     return s
+
+
+def pound_key_in_string(x6):
+    return f"# key: {x6}"

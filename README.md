@@ -4,6 +4,7 @@
 - [ ] insert confuse code
 - [ ] refactor preserve string function
 - [ ] preserve file name
+- [ ] fix remove comment bug (print("# HI"))
 - [x] get all library key word
 - [ ] ~~assign library to augment (o = os)~~
 - [x] preserve library function (os.path.join, re.fullmatch, ...)
