@@ -5,6 +5,7 @@ import shutil
 import random
 import string
 import logging
+from collections import deque
 
 mapping_table = {"source": "generated"}
 unique_str = set()
@@ -13,26 +14,27 @@ test_path_map = {}
 
 def generate_random_string():
     return "".join(
-        random.choice(string.ascii_letters) for _ in range(random.randint(3, 10))
+        random.choice(string.ascii_uppercase) for _ in range(random.randint(4, 16))
     )
 
 
 def collect_keyword(extras=None):
     seen = set()
-    stack = [("int", int), ("float", float), ("bool", bool), ("str", str)]
+    queue = deque([("int", int), ("float", float), ("bool", bool), ("str", str), ("dict", dict),
+                   ("set", set), ("list", list), ])
     if extras is not None:
         for extra in extras:
             try:
-                stack.append((extra, eval(extra)))
-            except NameError:
+                queue.append((extra, eval(extra)))
+            except (NameError, SyntaxError):
                 pass
-    while stack:
-        key, obj = stack.pop()
+    while queue:
+        key, obj = queue.popleft()
         if key not in seen:
             seen.add(key)
             for k, f in inspect.getmembers(obj):
-                if not k.startswith("_") and k not in seen and (inspect.isfunction(f) or inspect.ismodule(f)):
-                    stack.append((k, f))
+                if not k.startswith("_") and k not in seen: # and (inspect.isfunction(f) or inspect.ismodule(f)):
+                    queue.append((k, f))
     return seen
 
 
@@ -97,7 +99,7 @@ class Scan:
     def _scan_external(self, file_dir):
         split_path = file_dir.split(os.sep)
         filename = os.path.splitext(split_path.pop())[0]
-        modules = split_path[split_path.index(self.project) + 1 :]
+        modules = split_path[split_path.index(self.project) + 1:]
         for module in modules + [filename]:
             self.keys.add(module)
 
@@ -137,11 +139,11 @@ class ScanPyFunc(Scan):
 
             try:
                 pare_end = func.index(")")
-                for arg in func[pare_start + 1 : pare_end].split(","):
+                for arg in func[pare_start + 1: pare_end].split(","):
                     self.keys.add(arg.split("=")[0].strip())
             except ValueError:
                 while not func.strip().endswith("):"):
-                    for arg in func[pare_start + 1 :].split(","):
+                    for arg in func[pare_start + 1:].split(","):
                         self.keys.add(arg.split("=")[0].strip())
                     pare_start = -1
                     func = f.readline().replace(" ", "")
@@ -153,9 +155,9 @@ class ScanPyVar(Scan):
     def _execute(self, line, f):
         line = line.replace(" ", "")
         if (
-            "=" in line
-            and not line.startswith("def")
-            and not self._is_equal_in_parentheses(line)
+                "=" in line
+                and not line.startswith("def")
+                and not self._is_equal_in_parentheses(line)
         ):
             ind = 0
             for k in ("=", "+=", "-=", "/=", "*="):
@@ -188,7 +190,7 @@ class ScanPyClass(Scan):
             cls = line.strip()[5:]
             try:
                 pare_start, pare_end = cls.index("("), cls.index(")")
-                for func_name in cls[pare_start + 1 : pare_end].split(","):
+                for func_name in cls[pare_start + 1: pare_end].split(","):
                     self.keys.add(func_name)
             except ValueError:
                 pare_start, pare_end = -1, -1
@@ -208,7 +210,8 @@ class ScanImport(Scan):
                     for func in lib.split("."):
                         self.special_key.add(func)
                         self.import_key.add(func)
-            exec(" ".join(line))
+            if not line[1].startswith("."):
+                exec(" ".join(line))
         # get library methods
         else:
             for lib in line:
@@ -277,6 +280,8 @@ def replace_string_in_pattern(i, lines):
             for t in text:
                 ori_text = t
                 for k, v in mapping_table.items():
+                    if ori_text in (f'"{k}"', f"'{k}'"):
+                        break
                     t = regex_replace(t, k, v + "@")  # template replace
                 line = line.replace(ori_text, t)
             lines[i] = line
@@ -296,8 +301,6 @@ def remove_single_comment(i, lines):
     line = lines[i].strip()
     if line.startswith("#"):
         lines[i] = ""
-    else:
-        lines[i] = re.sub(r"#.*", "\n", lines[i])
 
 
 def remove_multi_line_comment(i, lines):

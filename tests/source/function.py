@@ -39,3 +39,13 @@ def multiline_string(x5):
 
 def pound_key_in_string(x6):
     return f"# key: {x6}"
+
+
+def get_dict_value(x7):
+    d = {"x7": x7}
+    return d["x7"]
+
+
+def dict_add(x8):
+    d2 = {"x8": x8, "y8": 3}
+    return d2["x8"] + d2["y8"]

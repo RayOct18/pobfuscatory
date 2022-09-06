@@ -17,7 +17,7 @@ def _compare_result(func, *args, **kwargs):
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
     generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table[func.__name__])(*args, **kwargs)
+    result = getattr(generated_func, obfuscator.mapping_table.get(func.__name__, func.__name__))(*args, **kwargs)
     assert result == ori_result
 
 
@@ -84,7 +84,7 @@ def test_class():
     obfus.obfuscate()
     generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     cls = getattr(generated_cls, obfuscator.mapping_table["A"])(2, 3)
-    result = getattr(cls, obfuscator.mapping_table["add"])()
+    result = getattr(cls, obfuscator.mapping_table.get("add", "add"))()
     assert result == ori_result
 
 
@@ -96,7 +96,7 @@ def test_inherit_class():
     obfus.obfuscate()
     generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
     cls = getattr(generated_cls, obfuscator.mapping_table["B"])(1, 2, 3)
-    result = getattr(cls, obfuscator.mapping_table["add"])()
+    result = getattr(cls, obfuscator.mapping_table.get("add", "add"))()
     assert result == ori_result
 
 
@@ -117,7 +117,7 @@ def test_remove_comment():
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
     with open(obfuscator.test_path_map[ori_path], 'r') as f:
-        assert len(f.readlines()) == 5
+        assert len(f.readlines()) == 4
 
 
 def test_remove_multi_comment():
@@ -181,3 +181,11 @@ def test_name_conflict():
 
 def test_assign_library():
     _compare_result(imports.assign_library, "x")
+
+
+def test_get_dict_value():
+    _compare_result(function.get_dict_value, "x")
+
+
+def test_dict_add():
+    _compare_result(function.dict_add, 3)
