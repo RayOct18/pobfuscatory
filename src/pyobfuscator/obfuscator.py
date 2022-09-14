@@ -7,10 +7,6 @@ import string
 import logging
 from collections import deque
 
-mapping_table = {"source": "generated"}
-unique_str = set()
-test_path_map = {}
-
 
 def generate_random_string():
     return "".join(
@@ -38,70 +34,97 @@ def collect_keyword(extras=None):
     return seen
 
 
+class Keys:
+    def __init__(self):
+        self.mapping_table = {"source": "generated"}
+        self.unique_str = set()
+        self.test_path_map = {}
+
+        self.change_keys = set()
+        self.import_key = set()
+        self.special_key = set()
+
+    def init(self, exclude_keys):
+        self.special_key = {
+            "__init__",
+            "self",
+            "",
+            "'",
+            '"',
+            "_",
+            "*args",
+            "**kwargs",
+            "(",
+            ")",
+            "**args",
+        }
+
+        # add exclude keys
+        if isinstance(exclude_keys, (list, tuple)):
+            for key in exclude_keys:
+                self.special_key.add(key)
+
+    def collect_library_key(self):
+        # collect library keyword
+        keyword = collect_keyword(self.import_key)
+        self.special_key.update(keyword)
+
+    def update_mapping_table(self):
+        for func_name in self.change_keys:
+            if func_name not in self.mapping_table and func_name not in self.special_key:
+                random_string = generate_random_string()
+                while random_string in self.unique_str:
+                    random_string = generate_random_string()
+                self.mapping_table.update({func_name: random_string})
+                self.unique_str.add(generate_random_string())
+
+
 class Obfuscator:
-    def __init__(self, project, path, target=None, exclude_keys=None):
+    def __init__(self, project, source, target=None, exclude_keys=None):
         self.project = project
-        self.path = path
+        self.source = source
         self.target = target
-        self.exclude_keys = exclude_keys
+        self.keys = Keys()
+        self.keys.init(exclude_keys)
 
     def obfuscate(self):
-        scan = Scan(self.project, exclude_keys=self.exclude_keys)
+        scan = Scan(self.project, self.keys)
         # scan all files
-        self._process_file(scan.run)
-        # collect library keyword
-        keyword = collect_keyword(scan.import_key)
-        scan.special_key.update(keyword)
+        self._process(scan.run)
+        self.keys.collect_library_key()
         # generate random word map
-        scan.update_mapping_table()
+        self.keys.update_mapping_table()
+
         # convert files
-        self._process_file(
-            lambda x: convert(x, project=self.project, target=self.target)
+        self._process(
+            lambda x: convert(x, project=self.project, keys=self.keys, target=self.target)
         )
         if self.target:
-            self.path = self.path.replace(self.project, self.target)
-        clean_empty_folder(self.path)
+            self.source = self.source.replace(self.project, self.target)
+        clean_empty_folder(self.source)
 
-    def _process_file(self, func):
-        if self.path.endswith(".py"):
-            file_dir = self.path
+    def _process(self, func):
+        if self.source.endswith(".py"):
+            file_dir = self.source
             func(file_dir)
         else:
-            for root, dirs, files in os.walk(self.path):
+            for root, dirs, files in os.walk(self.source):
                 for filename in files:
                     file_dir = os.path.join(root, filename)
                     func(file_dir)
 
 
 class Scan:
-    keys = set()
-    import_key = set()
-    special_key = {
-        "__init__",
-        "self",
-        "",
-        "'",
-        '"',
-        "_",
-        "*args",
-        "**kwargs",
-        "(",
-        ")",
-        "**args",
-    }
-
-    def __init__(self, project, exclude_keys=None):
+    def __init__(self, project, keys):
         self.project = project
-        if isinstance(exclude_keys, (list, tuple)):
-            for key in exclude_keys:
-                self.special_key.add(key)
+        self.keys = keys
 
     def _scan_external(self, file_dir):
         split_path = file_dir.split(os.sep)
         filename = os.path.splitext(split_path.pop())[0]
         modules = split_path[split_path.index(self.project) + 1:]
         for module in modules + [filename]:
-            self.keys.add(module)
+            self.keys.change_keys.add(module)
 
     def run(self, file_dir):
         if file_dir.endswith(".py"):
@@ -112,20 +135,11 @@ class Scan:
                 while line:
                     logging.info(f"{file_dir}, {line}")
                     for subclass in Scan.__subclasses__():
-                        subclass(self.project)._execute(line, f)
+                        subclass(self.project, self.keys)._execute(line, f)
                     line = f.readline()
 
     def _execute(self, line, f):
         raise NotImplementedError
-
-    def update_mapping_table(self):
-        for func_name in self.keys:
-            if func_name not in mapping_table and func_name not in self.special_key:
-                random_string = generate_random_string()
-                while random_string in unique_str:
-                    random_string = generate_random_string()
-                mapping_table.update({func_name: random_string})
-                unique_str.add(generate_random_string())
 
 
 class ScanPyFunc(Scan):
@@ -135,20 +149,20 @@ class ScanPyFunc(Scan):
             func = line[3:]
             pare_start = func.index("(")
             func_name = func[:pare_start]
-            self.keys.add(func_name)
+            self.keys.change_keys.add(func_name)
 
             try:
                 pare_end = func.index(")")
                 for arg in func[pare_start + 1: pare_end].split(","):
-                    self.keys.add(arg.split("=")[0].strip())
+                    self.keys.change_keys.add(arg.split("=")[0].strip())
             except ValueError:
                 while not func.strip().endswith("):"):
                     for arg in func[pare_start + 1:].split(","):
-                        self.keys.add(arg.split("=")[0].strip())
+                        self.keys.change_keys.add(arg.split("=")[0].strip())
                     pare_start = -1
                     func = f.readline().replace(" ", "")
                 for arg in func[:-2].split(","):
-                    self.keys.add(arg.split("=")[0].strip())
+                    self.keys.change_keys.add(arg.split("=")[0].strip())
 
 
 class ScanPyVar(Scan):
@@ -174,7 +188,7 @@ class ScanPyVar(Scan):
                     var = var[5:]
                 if "[" in var:
                     var = var[: var.index("[")]
-                self.keys.add(var)
+                self.keys.change_keys.add(var)
 
     @staticmethod
     def _is_equal_in_parentheses(line):
@@ -191,43 +205,45 @@ class ScanPyClass(Scan):
             try:
                 pare_start, pare_end = cls.index("("), cls.index(")")
                 for func_name in cls[pare_start + 1: pare_end].split(","):
-                    self.keys.add(func_name)
+                    self.keys.change_keys.add(func_name)
             except ValueError:
                 pare_start, pare_end = -1, -1
             func_name = cls[:pare_start]
-            self.keys.add(func_name)
+            self.keys.change_keys.add(func_name)
 
 
 class ScanImport(Scan):
     def _execute(self, line, f):
-        line = line.strip().split()
+        line = line.strip()
         # get library name
-        if line and line[0] in ("import", "from"):
-            for lib in line:
-                if lib.startswith(".") or lib.startswith(self.project):
-                    break
-                if lib not in ("import", "from"):
-                    for func in lib.split("."):
-                        self.special_key.add(func)
-                        self.import_key.add(func)
-            if not line[1].startswith("."):
-                exec(" ".join(line))
-        # get library methods
-        else:
-            for lib in line:
-                for k in self.import_key:
-                    if lib.startswith(k):
-                        for func in lib.split("(")[0].split("."):
-                            self.special_key.add(func)
+        line_split = line.split()
+        if line_split and line_split[0] in ("import", "from"):
+            if line_split[1].startswith(".") or line_split[1].startswith(self.project):
+                return
+            all_words = re.findall(r"(\w+)", line)
+            for w in all_words:
+                self.keys.special_key.add(w)
+                self.keys.import_key.add(w)
+            if not line_split[1].startswith("."):
+                exec(line)
 
 
-def convert(file_dir, project, target=None):
+class ScanString(Scan):
+    def _execute(self, line, f):
+        line = line.strip()
+        strings = re.findall(r'"(.+?)"', line) + re.findall(r"'(.+?)'", line)
+        for s in strings:
+            for w in re.findall(r'(?!{)(\w+)(?!})', s):
+                self.keys.special_key.add(w)
+
+
+def convert(file_dir, project, keys, target=None):
     target_dir = file_dir.replace(project, target) if target else file_dir
 
     folder = f"{os.sep}".join(target_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     if file_dir.endswith(".py"):
-        lines = replace(file_dir)
+        lines = replace(file_dir, keys)
         with open(target_dir, "w", encoding="utf-8") as f:
             f.writelines(lines)
     else:
@@ -235,62 +251,25 @@ def convert(file_dir, project, target=None):
             shutil.copy(file_dir, target_dir)
         except shutil.SameFileError:
             pass
-    rename_file(file_dir, target_dir)
+    rename_file(file_dir, target_dir, keys)
 
 
-def replace(file_dir):
+def replace(file_dir, keys):
     with open(file_dir, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
     for i in range(len(lines)):
-        replace_string_in_pattern(i, lines)  # TODO: refactor
-        replace_keys(i, lines)
+        if i == 50:
+            print("test")
+        replace_keys(i, lines, keys)
         remove_single_comment(i, lines)
         remove_multi_line_comment(i, lines)
     return lines
 
 
-def replace_string_in_pattern(i, lines):
+def replace_keys(i, lines, keys):
     line = lines[i]
-
-    patterns = (r"(?<=\B){.*?}(?=\B)",)
-    for pattern in patterns:
-        text = re.findall(pattern, lines[i])
-        if text:
-            for t in text:
-                ori_text = t
-                for k, v in mapping_table.items():
-                    t = regex_replace(t, k, v)
-                line = line.replace(ori_text, t)
-            lines[i] = line
-    patterns = (
-        r'\w".*"',
-        r"\w'.*'",
-        r'".*"',
-        r"'.*'",
-        r"'.*\\$",
-        r'".*\\$',
-        r".*'",
-        r'.*"',
-    )
-
-    for pattern in patterns:
-        text = re.findall(pattern, lines[i].strip())
-        if text:
-            for t in text:
-                ori_text = t
-                for k, v in mapping_table.items():
-                    if ori_text in (f'"{k}"', f"'{k}'"):
-                        break
-                    t = regex_replace(t, k, v + "@")  # template replace
-                line = line.replace(ori_text, t)
-            lines[i] = line
-            break
-
-
-def replace_keys(i, lines):
-    line = lines[i]
-    for k, v in mapping_table.items():
+    for k, v in keys.mapping_table.items():
         logging.debug(f"line: {line}, K: {k}, V: {v}")
         line = regex_replace(line, k, v)
         line = line.replace(v + "@", k)  # undo template replace
@@ -319,13 +298,13 @@ def regex_replace(line, source, target):
     return re.sub(rf"\b{source}\b", target, line)
 
 
-def rename_file(file_dir, target_dir):
+def rename_file(file_dir, target_dir, keys):
     obfuscate_dir = target_dir.split(os.sep)
     for i, d in enumerate(obfuscate_dir):
         if d.endswith(".py"):
             d = os.path.splitext(d)[0]
-        if d in mapping_table:
-            obfuscate_dir[i] = mapping_table[d]
+        if d in keys.mapping_table:
+            obfuscate_dir[i] = keys.mapping_table[d]
     obfuscate_dir = f"{os.sep}".join(obfuscate_dir)
     if target_dir.endswith(".py"):
         obfuscate_dir = (
@@ -334,7 +313,7 @@ def rename_file(file_dir, target_dir):
     folder = f"{os.sep}".join(obfuscate_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     os.rename(target_dir, obfuscate_dir)
-    test_path_map.update({os.path.abspath(file_dir): os.path.abspath(obfuscate_dir)})
+    keys.test_path_map.update({os.path.abspath(file_dir): os.path.abspath(obfuscate_dir)})
 
 
 def clean_empty_folder(root):

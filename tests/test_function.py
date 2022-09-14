@@ -11,13 +11,21 @@ from source.classes import A, B, C
 from source import function, comment, multi_comment, special_arg, imports
 
 
+@pytest.fixture(autouse=True)
+def run_before_and_after_tests():
+    obfuscator.mapping_table = {"source": "generated"}
+    obfuscator.unique_str = set()
+    obfuscator.test_path_map = {}
+    yield
+
+
 def _compare_result(func, *args, **kwargs):
     ori_result = func(*args, **kwargs)
     ori_path = os.path.abspath(inspect.getfile(eval(func.__module__.split(".")[-1])))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table.get(func.__name__, func.__name__))(*args, **kwargs)
+    generated_func = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfus.keys.mapping_table.get(func.__name__, func.__name__))(*args, **kwargs)
     assert result == ori_result
 
 
@@ -59,8 +67,8 @@ def test_package():
     ori_path = os.path.abspath(inspect.getfile(foo))
     obfus = Obfuscator('source', os.path.join("tests", "source", "package"), "generated")
     obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["foo"])(1, 2, 3)
+    generated_func = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfus.keys.mapping_table["foo"])(1, 2, 3)
     assert result == ori_result
     assert len(list(os.walk("tests/generated"))) == 4
 
@@ -82,9 +90,9 @@ def test_class():
     ori_path = os.path.abspath(inspect.getfile(A))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    cls = getattr(generated_cls, obfuscator.mapping_table["A"])(2, 3)
-    result = getattr(cls, obfuscator.mapping_table.get("add", "add"))()
+    generated_cls = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    cls = getattr(generated_cls, obfus.keys.mapping_table["A"])(2, 3)
+    result = getattr(cls, obfus.keys.mapping_table.get("add", "add"))()
     assert result == ori_result
 
 
@@ -94,9 +102,9 @@ def test_inherit_class():
     ori_path = os.path.abspath(inspect.getfile(B))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    cls = getattr(generated_cls, obfuscator.mapping_table["B"])(1, 2, 3)
-    result = getattr(cls, obfuscator.mapping_table.get("add", "add"))()
+    generated_cls = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    cls = getattr(generated_cls, obfus.keys.mapping_table["B"])(1, 2, 3)
+    result = getattr(cls, obfus.keys.mapping_table.get("add", "add"))()
     assert result == ori_result
 
 
@@ -106,9 +114,9 @@ def test_class_multi_line_args():
     ori_path = os.path.abspath(inspect.getfile(C))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    generated_cls = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    cls = getattr(generated_cls, obfuscator.mapping_table["C"])(2, 3)
-    result = getattr(cls, obfuscator.mapping_table["multiply"])()
+    generated_cls = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    cls = getattr(generated_cls, obfus.keys.mapping_table["C"])(2, 3)
+    result = getattr(cls, obfus.keys.mapping_table["multiply"])()
     assert result == ori_result
 
 
@@ -116,7 +124,7 @@ def test_remove_comment():
     ori_path = os.path.abspath(inspect.getfile(comment))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    with open(obfuscator.test_path_map[ori_path], 'r') as f:
+    with open(obfus.keys.test_path_map[ori_path], 'r') as f:
         assert len(f.readlines()) == 4
 
 
@@ -124,7 +132,7 @@ def test_remove_multi_comment():
     ori_path = os.path.abspath(inspect.getfile(multi_comment))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    with open(obfuscator.test_path_map[ori_path], 'r') as f:
+    with open(obfus.keys.test_path_map[ori_path], 'r') as f:
         assert len(f.readlines()) == 4
 
 
@@ -140,7 +148,7 @@ def test_preserve_function_name():
     ori_path = os.path.abspath(inspect.getfile(foo))
     obfus = Obfuscator('source', os.path.join("tests", "source", "package"), "generated", ["foo"])
     obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
+    generated_func = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
     result = getattr(generated_func, "foo")(1, 2, 3)
     assert result == ori_result
     assert len(list(os.walk("tests/generated"))) == 4
@@ -162,8 +170,8 @@ def test_dynamic_args():
     ori_path = os.path.abspath(inspect.getfile(special_arg))
     obfus = Obfuscator('source', ori_path, 'generated')
     obfus.obfuscate()
-    generated_func = SourceFileLoader("", obfuscator.test_path_map[ori_path]).load_module()
-    result = getattr(generated_func, obfuscator.mapping_table["dynamic_args"])(*args, **kwargs)
+    generated_func = SourceFileLoader("", obfus.keys.test_path_map[ori_path]).load_module()
+    result = getattr(generated_func, obfus.keys.mapping_table["dynamic_args"])(*args, **kwargs)
     assert result == ori_result
 
 
