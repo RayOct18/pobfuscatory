@@ -56,3 +56,11 @@ def test_scan_string_f_string():
     line = 'f"print x4: {x4}, y4: {y4}, z4: {z4}"'
     scan._execute(line, None)
     assert len(keys.special_key) == 7
+
+
+def test_scan_var():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanPyVar("source", keys)
+    line = 're.fullmatch, string=component["kb_model"]'
+    scan._execute(line, None)
+    assert len(keys.change_keys) == 0

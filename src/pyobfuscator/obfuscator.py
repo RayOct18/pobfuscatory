@@ -172,6 +172,7 @@ class ScanPyVar(Scan):
                 "=" in line
                 and not line.startswith("def")
                 and not self._is_equal_in_parentheses(line)
+                and "." not in line
         ):
             ind = 0
             for k in ("=", "+=", "-=", "/=", "*="):
