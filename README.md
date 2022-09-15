@@ -3,7 +3,6 @@
 ## TODO
 - [ ] remove comment in-line
 - [ ] insert confuse code
-- [ ] refactor preserve string function
 - [ ] preserve file name
 - [x] fix remove comment bug (print("# HI"))
 - [x] get all library key word
