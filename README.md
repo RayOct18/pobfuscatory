@@ -3,7 +3,7 @@
 ## TODO
 - [ ] remove comment in-line
 - [ ] insert confuse code
-- [ ] preserve file name
+- [ ] ~~preserve file name~~
 - [x] fix remove comment bug (print("# HI"))
 - [x] get all library key word
 - [ ] ~~assign library to augment (o = os)~~

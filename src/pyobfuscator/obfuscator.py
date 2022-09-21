@@ -8,9 +8,9 @@ import logging
 from collections import deque
 
 
-def generate_random_string():
+def generate_random_string(string_list=string.ascii_uppercase, start=4, end=16):
     return "".join(
-        random.choice(string.ascii_uppercase) for _ in range(random.randint(4, 16))
+        random.choice(string_list) for _ in range(random.randint(start, end))
     )
 
 
@@ -253,6 +253,17 @@ def convert(file_dir, project, keys, target=None):
         except shutil.SameFileError:
             pass
     rename_file(file_dir, target_dir, keys)
+
+
+def insert_confuse_line(i, lines, cache, probability=0.5):
+    line = lines[i]
+    if random.random() < probability:
+        space = len(line) - len(line.lstrip()) if line != "\n" else 0
+        var = generate_random_string(string.ascii_letters, 5, 20)
+        val = f'"{generate_random_string(string.ascii_letters+string.digits, 5, 30)}"'
+        res = " " * space + var + " = " + val + "\n"
+        cache.append(res)
+    return cache
 
 
 def replace(file_dir, keys):
