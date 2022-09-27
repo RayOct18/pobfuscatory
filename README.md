@@ -1,8 +1,9 @@
 # PyObfuscator
 
 ## TODO
+- [ ] write document
 - [ ] remove comment in-line
-- [ ] insert confuse code
+- [x] insert confuse code
 - [ ] ~~preserve file name~~
 - [x] fix remove comment bug (print("# HI"))
 - [x] get all library key word

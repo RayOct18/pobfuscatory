@@ -1,13 +1,10 @@
-
 def add(arg1, arg2):
     var1 = arg1
     var2 = arg2
     return var1 + var2
 
 
-def multiply(x1,
-             y1,
-             z1=3):
+def multiply(x1, y1, z1=3):
     return x1 * y1 * z1
 
 
@@ -29,8 +26,7 @@ def string(x4, y4):
 
 
 def multiline_string(x5):
-    s = "test1, x5\n" +\
-        "test2"
+    s = "test1, x5\n" + "test2"
     s += "test3 \
           test4 x5  "
     s += str(x5)

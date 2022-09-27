@@ -1,5 +1,3 @@
-
-
 def multi_comment():
     """in-line test"""
     """
