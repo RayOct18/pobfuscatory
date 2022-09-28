@@ -14,9 +14,8 @@ from source import function, comment, multi_comment, special_arg, imports, case
 def args():
     class args:
         def __init__(self):
-            self.project = "source"
             self.source = None
-            self.target = "generated"
+            self.target = "./tests/generated"
             self.exclude_keys = None
             self.probability = 1
             self.repeat = 1

@@ -115,7 +115,7 @@ class Obfuscator:
         self._process(
             lambda x: convert(
                 x,
-                project=self.root,
+                root=self.root,
                 keys=self.keys,
                 target=self.target,
                 probability=self.probability,
@@ -123,8 +123,10 @@ class Obfuscator:
             )
         )
         if self.target:
-            self.source = self.source.replace(self.root, self.target)
+            sp = self.source.split(os.sep)
+            self.source = os.path.join(self.target, *sp[sp.index(self.root)+1:])
         clean_empty_folder(self.source)
+
 
     def _process(self, func):
         if self.source.endswith(".py"):
@@ -264,8 +266,11 @@ class ScanString(Scan):
                 self.keys.special_key.add(w)
 
 
-def convert(file_dir, project, keys, target=None, probability=1, repeat=1):
-    target_dir = file_dir.replace(project, target) if target else file_dir
+def convert(file_dir, root, keys, target=None, probability=1, repeat=1):
+    target_dir = file_dir
+    if target:
+        sp = file_dir.split(os.sep)
+        target_dir = os.path.join(target, *sp[sp.index(root) + 1:])
 
     folder = f"{os.sep}".join(target_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
