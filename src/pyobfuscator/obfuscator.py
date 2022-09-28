@@ -68,6 +68,7 @@ class Keys:
             "(",
             ")",
             "**args",
+            "f",
         }
 
         # add exclude keys
@@ -309,45 +310,48 @@ def get_last_bracket_index(i, lines, stack, pattern, sign):
 
 
 def generate_confuse_line(i, lines, cache, stack, probability=1, repeat=1):
-    # pass line can not insert confuse string
-    pattern = r"\(|\)"
-    if re.findall(pattern, lines[i]):
-        i = get_last_bracket_index(i, lines, stack, pattern, "(")
-        last = re.findall(pattern, lines[i])
-        if lines[i].strip().startswith("def") or last[0] == ")":
+    try:
+        # pass line can not insert confuse string
+        pattern = r"\(|\)"
+        if re.findall(pattern, lines[i]):
+            i = get_last_bracket_index(i, lines, stack, pattern, "(")
+            last = re.findall(pattern, lines[i])
+            if lines[i].strip().startswith("def") or last[0] == ")":
+                return i
+        pattern = r"\{|\}"
+        if re.findall(pattern, lines[i]):
+            i = get_last_bracket_index(i, lines, stack, pattern, "{")
+            last = re.findall(pattern, lines[i])
+            if last[0] == "}":
+                return i
+        pattern = r"\[|\]"
+        if re.findall(pattern, lines[i]):
+            i = get_last_bracket_index(i, lines, stack, pattern, "[")
+            last = re.findall(pattern, lines[i])
+            if last[0] == "]":
+                return i
+        if i >= len(lines):
             return i
-    pattern = r"\{|\}"
-    if re.findall(pattern, lines[i]):
-        i = get_last_bracket_index(i, lines, stack, pattern, "{")
-        last = re.findall(pattern, lines[i])
-        if last[0] == "}":
+        bypass = lines[i].strip()
+        if (
+            bypass == ""
+            or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
+            or bypass.endswith(("'", '"'))
+        ):
             return i
-    pattern = r"\[|\]"
-    if re.findall(pattern, lines[i]):
-        i = get_last_bracket_index(i, lines, stack, pattern, "[")
-        last = re.findall(pattern, lines[i])
-        if last[0] == "]":
-            return i
-    if i >= len(lines):
-        return i
-    bypass = lines[i].strip()
-    if (
-        bypass == ""
-        or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
-        or bypass.endswith(("'", '"'))
-    ):
-        return i
 
-    # generate confuse string
-    line = lines[i]
-    if random.random() < probability:
-        for _ in range(random.randint(1, repeat)):
-            space = len(line) - len(line.lstrip()) if line != "\n" else 0
-            var = generate_random_string(string.ascii_letters, 5, 20)
-            val = f'"{generate_random_string(string.ascii_letters + string.digits, 5, 30)}"'
-            res = (i, " " * space + var + " = " + val + "\n")
-            cache.append(res)
-    return i
+        # generate confuse string
+        line = lines[i]
+        if random.random() < probability:
+            for _ in range(random.randint(1, repeat)):
+                space = len(line) - len(line.lstrip()) if line != "\n" else 0
+                var = generate_random_string(string.ascii_letters, 5, 20)
+                val = f'"{generate_random_string(string.ascii_letters + string.digits, 5, 30)}"'
+                res = (i, " " * space + var + " = " + val + "\n")
+                cache.append(res)
+        return i
+    except IndexError:
+        return i
 
 
 def insert_confuse_line(lines, cache):
