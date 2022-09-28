@@ -95,8 +95,8 @@ class Keys:
 
 class Obfuscator:
     def __init__(self, args):
-        self.project = args.source
-        self.source = args.dir
+        self.project = args.project
+        self.source = args.source
         self.target = args.target
         self.keys = Keys()
         self.keys.init(args.exclude_keys)
@@ -145,9 +145,12 @@ class Scan:
     def _scan_external(self, file_dir):
         split_path = file_dir.split(os.sep)
         filename = os.path.splitext(split_path.pop())[0]
-        modules = split_path[split_path.index(self.project) + 1 :]
-        for module in modules + [filename]:
-            self.keys.change_keys.add(module)
+        try:
+            modules = split_path[split_path.index(self.project) + 1 :]
+            for module in modules + [filename]:
+                self.keys.change_keys.add(module)
+        except ValueError:
+            pass
 
     def run(self, file_dir):
         if file_dir.endswith(".py"):

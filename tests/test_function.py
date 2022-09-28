@@ -14,8 +14,8 @@ from source import function, comment, multi_comment, special_arg, imports, case
 def args():
     class args:
         def __init__(self):
-            self.source = "source"
-            self.dir = None
+            self.project = "source"
+            self.source = None
             self.target = "generated"
             self.exclude_keys = None
             self.probability = 1
@@ -27,7 +27,7 @@ def args():
 def _compare_result(arg, func, *args, **kwargs):
     ori_result = func(*args, **kwargs)
     ori_path = os.path.abspath(inspect.getfile(eval(func.__module__.split(".")[-1])))
-    arg.dir = ori_path
+    arg.source = ori_path
     obfus = Obfuscator(arg)
     obfus.obfuscate()
     generated_func = SourceFileLoader(
@@ -72,7 +72,7 @@ def test_parse_multiline_string(args):
 def test_package(args):
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
-    args.dir = os.path.join("tests", "source", "package")
+    args.source = os.path.join("tests", "source", "package")
     obfus = Obfuscator(args)
     obfus.obfuscate()
     generated_func = SourceFileLoader(
@@ -98,7 +98,7 @@ def test_class(args):
     a = A(2, 3)
     ori_result = a.add()
     ori_path = os.path.abspath(inspect.getfile(A))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     generated_cls = SourceFileLoader(
@@ -113,7 +113,7 @@ def test_inherit_class(args):
     b = B(1, 2, 3)
     ori_result = b.add()
     ori_path = os.path.abspath(inspect.getfile(B))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     generated_cls = SourceFileLoader(
@@ -128,7 +128,7 @@ def test_class_multi_line_args(args):
     a = C(2, 3)
     ori_result = a.multiply()
     ori_path = os.path.abspath(inspect.getfile(C))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     generated_cls = SourceFileLoader(
@@ -141,7 +141,7 @@ def test_class_multi_line_args(args):
 
 def test_remove_comment(args):
     ori_path = os.path.abspath(inspect.getfile(comment))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     with open(obfus.keys.test_path_map[ori_path], "r") as f:
@@ -150,7 +150,7 @@ def test_remove_comment(args):
 
 def test_remove_multi_comment(args):
     ori_path = os.path.abspath(inspect.getfile(multi_comment))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     with open(obfus.keys.test_path_map[ori_path], "r") as f:
@@ -158,7 +158,7 @@ def test_remove_multi_comment(args):
 
 
 def test_pycache_handle(args):
-    args.dir = os.path.join("tests", "source", "pycache")
+    args.source = os.path.join("tests", "source", "pycache")
     obfus = Obfuscator(args)
     obfus.obfuscate()
     os.makedirs("tests/generated", exist_ok=True)
@@ -168,7 +168,7 @@ def test_pycache_handle(args):
 def test_preserve_function_name(args):
     ori_result = foo.foo(1, 2, 3)
     ori_path = os.path.abspath(inspect.getfile(foo))
-    args.dir = os.path.join("tests", "source", "package")
+    args.source = os.path.join("tests", "source", "package")
     args.exclude_keys = ["foo"]
     obfus = Obfuscator(args)
     obfus.obfuscate()
@@ -194,7 +194,7 @@ def test_dynamic_args(args):
     kwargs = {"x": 1, "y": 2}
     ori_result = special_arg.dynamic_args(*value, **kwargs)
     ori_path = os.path.abspath(inspect.getfile(special_arg))
-    args.dir = ori_path
+    args.source = ori_path
     obfus = Obfuscator(args)
     obfus.obfuscate()
     generated_func = SourceFileLoader(
