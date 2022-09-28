@@ -6,7 +6,6 @@ from .obfuscator import Obfuscator
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-s", "--source", type=str, required=True)
-    parser.add_argument("-p", "--project", type=str, default="None")
     parser.add_argument("-t", "--target", type=str, default=None)
     parser.add_argument("-e", "--exclude_keys", nargs="+", default=None)
     parser.add_argument("-v", "--verbose", type=int, default=0)

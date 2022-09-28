@@ -95,16 +95,16 @@ class Keys:
 
 class Obfuscator:
     def __init__(self, args):
-        self.project = args.project
         self.source = args.source
         self.target = args.target
         self.keys = Keys()
+        self.root = os.path.basename(os.path.dirname(args.source))
         self.keys.init(args.exclude_keys)
         self.probability = args.probability
         self.repeat = args.repeat
 
     def obfuscate(self):
-        scan = Scan(self.project, self.keys)
+        scan = Scan(self.root, self.keys)
         # scan all files
         self._process(scan.run)
         self.keys.collect_library_key()
@@ -115,7 +115,7 @@ class Obfuscator:
         self._process(
             lambda x: convert(
                 x,
-                project=self.project,
+                project=self.root,
                 keys=self.keys,
                 target=self.target,
                 probability=self.probability,
@@ -123,7 +123,7 @@ class Obfuscator:
             )
         )
         if self.target:
-            self.source = self.source.replace(self.project, self.target)
+            self.source = self.source.replace(self.root, self.target)
         clean_empty_folder(self.source)
 
     def _process(self, func):
