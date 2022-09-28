@@ -7,7 +7,7 @@ from importlib.machinery import SourceFileLoader
 from pyobfuscator.obfuscator import Obfuscator, clean_empty_folder
 from source.package import foo
 from source.classes import A, B, C
-from source import function, comment, multi_comment, special_arg, imports
+from source import function, comment, multi_comment, special_arg, imports, case
 
 
 @pytest.fixture
@@ -145,7 +145,7 @@ def test_remove_comment(args):
     obfus = Obfuscator(args)
     obfus.obfuscate()
     with open(obfus.keys.test_path_map[ori_path], "r") as f:
-        assert len(f.readlines()) == 5
+        assert len(f.readlines()) == 3
 
 
 def test_remove_multi_comment(args):
@@ -154,7 +154,7 @@ def test_remove_multi_comment(args):
     obfus = Obfuscator(args)
     obfus.obfuscate()
     with open(obfus.keys.test_path_map[ori_path], "r") as f:
-        assert len(f.readlines()) == 5
+        assert len(f.readlines()) == 3
 
 
 def test_pycache_handle(args):
@@ -228,3 +228,15 @@ def test_get_dict_value(args):
 
 def test_dict_add(args):
     _compare_result(args, function.dict_add, 3)
+
+
+def test_log(args):
+    _compare_result(args, case.log)
+
+
+def test_startswith(args):
+    _compare_result(args, case.startswith, "test")
+
+
+def test_multiline_list(args):
+    _compare_result(args, case.multiline_list, 1, 2, 3)
