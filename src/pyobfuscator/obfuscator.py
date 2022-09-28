@@ -55,7 +55,7 @@ class Keys:
         self.import_key = set()
         self.special_key = set()
 
-    def init(self, exclude_keys):
+    def init(self, exclude_keys, target):
         self.special_key = {
             "__init__",
             "self",
@@ -75,6 +75,8 @@ class Keys:
         if isinstance(exclude_keys, (list, tuple)):
             for key in exclude_keys:
                 self.special_key.add(key)
+        for key in os.path.normpath(target).split(os.sep):
+            self.special_key.add(key)
 
     def collect_library_key(self):
         # collect library keyword
@@ -100,7 +102,7 @@ class Obfuscator:
         self.target = args.target
         self.keys = Keys()
         self.root = os.path.basename(os.path.dirname(args.source))
-        self.keys.init(args.exclude_keys)
+        self.keys.init(args.exclude_keys, args.target)
         self.probability = args.probability
         self.repeat = args.repeat
 
