@@ -1,26 +1,39 @@
 # PyObfuscator
 
-## TODO
-- [ ] write document
-- [ ] remove comment in-line
-- [x] insert confuse code
-- [ ] ~~preserve file name~~
-- [x] fix remove comment bug (print("# HI"))
-- [x] get all library key word
-- [ ] ~~assign library to augment (o = os)~~
-- [x] preserve library function (os.path.join, re.fullmatch, ...)
-- [x] preserve string (don't replace key in quotes)
-- [x] assign value into list (mat_rotation[0][2] += (rotate_w - w) / 2)
-- [x] dynamic arguments (*arg, **kwargs)
-- [x] star unpack list (a, b, *c, _ = ...)
-- [x] multiple line arguments
-- [x] preserve specify filename
-- [x] open py only
-- [x] clean comment
-- [x] process files are not belong python
-- [x] change these name to random string
-    - [x] package
-    - [x] file
-    - [x] function
-    - [x] variable
-    - [x] class
+# Install
+```bash
+pip install git+https://github.com/RayOct18/pyobfuscator
+```
+
+# Usage
+**Note:**
+If your project use not built-in library, you need to install it first.
+The obfuscator needs to scan all modules and functions from third-party libraries to exclude the keywords.
+
+```bash
+# single file
+$ python -m pyobfuscator -s ./single_file/raw/hello_world.py -t ./obfuscated
+
+# whole project
+$ python -m pyobfuscator -s ./src/pyobfuscator -t ./examples/project/obfuscated
+
+# preserve some key (obfuscator, Keys)
+$ python -m pyobfuscator -s ./src/pyobfuscator -t ./examples/project/obfuscated -e obfuscator Keys
+
+# adjust confuse line insertion, probability (0.0~1.0), repeat number(1~)
+$ python -m pyobfuscator -s ./src/pyobfuscator -t ./examples/project/obfuscated -p 0.5 -r 5
+# close confuse line
+$ python -m pyobfuscator -s ./src/pyobfuscator -t ./examples/project/obfuscated -p 0
+
+# open debug log
+$ python -m pyobfuscator -s ./src/pyobfuscator -t ./examples/project/obfuscated -v 1
+```
+
+# Examples
+**Single file:**
+[ [raw](https://github.com/RayOct18/pyobfuscator/blob/main/examples/single_file/raw/hello_world.py) ]
+[ [obfuscated](https://github.com/RayOct18/pyobfuscator/blob/main/examples/single_file/obfuscated/VGWPPEYHANJ.py) ]
+
+**Whole project:**
+[ [raw](https://github.com/RayOct18/pyobfuscator/tree/main/src/pyobfuscator) ]
+[ [obfuscated](https://github.com/RayOct18/pyobfuscator/tree/main/examples/project/obfuscated) ]
