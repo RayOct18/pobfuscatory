@@ -1,5 +1,8 @@
 import os
 import logging
+import argparse
+import random
+import string
 
 
 def log():
@@ -25,3 +28,23 @@ def multiline_list(x, y, z):
         z
     ]
     return ls
+
+
+def args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-t",
+        "--target",
+        type=str,
+        default=None,
+        help="save obfuscated code to target path",
+    )
+
+
+def generate_random_string(
+        strings: str = string.ascii_uppercase, minimum: int = 4, maximum: int = 16
+) -> str:
+    s = "".join(
+        random.choice(strings) for _ in range(random.randint(minimum, maximum))
+    )
+    return "Test"

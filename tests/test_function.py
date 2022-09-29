@@ -239,3 +239,7 @@ def test_startswith(args):
 
 def test_multiline_list(args):
     _compare_result(args, case.multiline_list, 1, 2, 3)
+
+
+def test_hint_args(args):
+    _compare_result(args, case.generate_random_string)

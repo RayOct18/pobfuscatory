@@ -8,14 +8,35 @@ import logging
 from collections import deque
 
 
-def generate_random_string(string_list=string.ascii_uppercase, start=4, end=16):
+def generate_random_string(
+    strings: str = string.ascii_uppercase, minimum: int = 4, maximum: int = 16
+) -> str:
+    """Generate random string.
+
+    Args:
+        strings: this strings must fits rules for python variables.
+        minimum: minimum length of random string.
+        maximum: maximum length of random string.
+
+    Returns:
+        The length of random string is between {start} and {end}.
+    """
     return "".join(
-        random.choice(string_list) for _ in range(random.randint(start, end))
+        random.choice(strings) for _ in range(random.randint(minimum, maximum))
     )
 
 
-def collect_keyword(extras=None):
+def collect_library_keyword(extras: set = None) -> set:
+    """Collect all keywords from other library for preserving the raw name.
+
+    Args:
+        extras: the import libraries set.
+
+    Returns:
+        the set of import library keywords.
+    """
     seen = set()
+    # initial queue
     queue = deque(
         [
             ("int", int),
@@ -27,35 +48,48 @@ def collect_keyword(extras=None):
             ("list", list),
         ]
     )
+    # run the import libraries and add to queue
     if extras is not None:
         for extra in extras:
             try:
                 queue.append((extra, eval(extra)))
             except (NameError, SyntaxError):
                 pass
+    # add key to seen and find other public members
     while queue:
         key, obj = queue.popleft()
         if key not in seen:
             seen.add(key)
             for k, f in inspect.getmembers(obj):
-                if (
-                    not k.startswith("_") and k not in seen
-                ):  # and (inspect.isfunction(f) or inspect.ismodule(f)):
+                if not k.startswith("_") and k not in seen:
                     queue.append((k, f))
     return seen
 
 
 class Keys:
+    """Store and process keywords.
+
+    Attributes:
+        mapping_table: raw-random keyword pair for converting code to obfuscated.
+        unique_str: store random keyword, prevent reusing the keyword.
+        change_keys: key will be obfuscate in this set.
+        import_key: import library set from source code.
+        special_key: key in this set will be preserve.
+        test_path_map: source-target path pair for unit test.
+    """
+
     def __init__(self):
         self.mapping_table = {"source": "generated"}
         self.unique_str = set()
-        self.test_path_map = {}
 
         self.change_keys = set()
         self.import_key = set()
         self.special_key = set()
 
+        self.test_path_map = {}
+
     def init(self, exclude_keys, target):
+        """lazy initialize, add key to special_key set"""
         self.special_key = {
             "__init__",
             "self",
@@ -70,20 +104,20 @@ class Keys:
             "**args",
             "f",
         }
-
         # add exclude keys
         if isinstance(exclude_keys, (list, tuple)):
             for key in exclude_keys:
                 self.special_key.add(key)
+        # add target folder
         for key in os.path.normpath(target).split(os.sep):
             self.special_key.add(key)
 
     def collect_library_key(self):
-        # collect library keyword
-        keyword = collect_keyword(self.import_key)
+        keyword = collect_library_keyword(self.import_key)
         self.special_key.update(keyword)
 
     def update_mapping_table(self):
+        """update raw-random pair string to mapping_table"""
         for func_name in self.change_keys:
             if (
                 func_name not in self.mapping_table
@@ -163,7 +197,7 @@ class Scan:
             with open(file_dir, "r", encoding="utf-8") as f:
                 line = f.readline()
                 while line:
-                    logging.info(f"{file_dir}, {line}")
+                    logging.debug(f"{file_dir}, {line}")
                     for subclass in Scan.__subclasses__():
                         subclass(self.project, self.keys)._execute(line, f)
                     line = f.readline()
@@ -174,8 +208,9 @@ class Scan:
 
 class ScanPyFunc(Scan):
     def _execute(self, line, f):
-        line = line.replace(" ", "")
-        if line.startswith("def"):
+        is_def = line.strip().split()
+        if is_def and is_def[0] == "def":
+            line = line.replace(" ", "")
             func = line[3:]
             pare_start = func.index("(")
             func_name = func[:pare_start]
@@ -186,12 +221,12 @@ class ScanPyFunc(Scan):
                 for arg in func[pare_start + 1 : pare_end].split(","):
                     self.keys.change_keys.add(arg.split("=")[0].strip())
             except ValueError:
-                while not func.strip().endswith("):"):
-                    for arg in func[pare_start + 1 :].split(","):
-                        self.keys.change_keys.add(arg.split("=")[0].strip())
+                while not func.strip().endswith(":"):
+                    for arg in func[pare_start + 1 :].strip().split(","):
+                        self.keys.change_keys.add(arg.split("=")[0].strip().split(":")[0])
                     pare_start = -1
                     func = f.readline().replace(" ", "")
-                for arg in func[:-2].split(","):
+                for arg in func[:func.index(")")].split(","):
                     self.keys.change_keys.add(arg.split("=")[0].strip())
 
 
