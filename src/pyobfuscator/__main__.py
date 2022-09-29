@@ -29,5 +29,7 @@ if __name__ == "__main__":
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
+    print(f"start obfuscate code from {args.source} ...")
     obfuscator = Obfuscator(args)
     obfuscator.obfuscate()
+    print(f"obfuscation done. save code to {args.target}")
