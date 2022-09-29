@@ -127,9 +127,8 @@ class Obfuscator:
         )
         if self.target:
             sp = self.source.split(os.sep)
-            self.source = os.path.join(self.target, *sp[sp.index(self.root)+1:])
+            self.source = os.path.join(self.target, *sp[sp.index(self.root) + 1 :])
         clean_empty_folder(self.source)
-
 
     def _process(self, func):
         if self.source.endswith(".py"):
@@ -273,7 +272,7 @@ def convert(file_dir, root, keys, target=None, probability=1, repeat=1):
     target_dir = file_dir
     if target:
         sp = file_dir.split(os.sep)
-        target_dir = os.path.join(target, *sp[sp.index(root) + 1:])
+        target_dir = os.path.join(target, *sp[sp.index(root) + 1 :])
 
     folder = f"{os.sep}".join(target_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
