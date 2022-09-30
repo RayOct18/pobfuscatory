@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "-v", "--verbose", type=int, default=0, help="log level for debug"
     )
     parser.add_argument(
-        "-b",
+        "-p",
         "--probability",
         type=float,
         default=0.5,

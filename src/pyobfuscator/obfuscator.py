@@ -104,6 +104,7 @@ class Keys:
             ")",
             "**args",
             "f",
+            "nargs",
         }
         # add exclude keys
         if isinstance(exclude_keys, list):
@@ -387,11 +388,10 @@ def replace(file_dir: str, keys: Keys, probability: float = 1.0, repeat: int = 1
         remove_multi_line_comment(i, lines)
 
     i = 0
-    bracket_stack = []
     confuse_cache = []
     while i < len(lines):
         i = generate_confuse_line(
-            i, lines, confuse_cache, bracket_stack, probability, repeat
+            i, lines, confuse_cache, probability, repeat
         )
         i += 1
     insert_confuse_line(lines, confuse_cache)
@@ -426,14 +426,13 @@ def remove_multi_line_comment(i: int, lines: list) -> None:
         lines[i] = ""
 
 
-def generate_confuse_line(i: int, lines: list, cache: list, stack: list, probability: float = 1.0, repeat: int = 1) -> int:
+def generate_confuse_line(i: int, lines: list, cache: list, probability: float = 1.0, repeat: int = 1) -> int:
     """Generate confuse line list for inserting at obfuscated code
 
     Args:
         i: Index of file line.
         lines: File content list.
         cache: Confuse line list.
-        stack: Template stack for getting last bracket line.
         probability: Probability of confuse line insertion (between 0.0 ~ 1.0)
         repeat: Maximum confuse line insertion number at same place (greater than 0)
 
@@ -445,21 +444,21 @@ def generate_confuse_line(i: int, lines: list, cache: list, stack: list, probabi
         # "()" cross multiple line.
         pattern = r"\(|\)"
         if re.findall(pattern, lines[i]):
-            i = get_last_bracket_index(i, lines, stack, pattern, "(")
+            i = get_last_bracket_index(i, lines, pattern, "(")
             last = re.findall(pattern, lines[i])
             if lines[i].strip().startswith("def") or last[0] == ")":
                 return i
         # "{}" cross multiple line.
         pattern = r"\{|\}"
         if re.findall(pattern, lines[i]):
-            i = get_last_bracket_index(i, lines, stack, pattern, "{")
+            i = get_last_bracket_index(i, lines, pattern, "{")
             last = re.findall(pattern, lines[i])
             if last[0] == "}":
                 return i
         # "[]" cross multiple line.
         pattern = r"\[|\]"
         if re.findall(pattern, lines[i]):
-            i = get_last_bracket_index(i, lines, stack, pattern, "[")
+            i = get_last_bracket_index(i, lines, pattern, "[")
             last = re.findall(pattern, lines[i])
             if last[0] == "]":
                 return i
@@ -488,19 +487,19 @@ def generate_confuse_line(i: int, lines: list, cache: list, stack: list, probabi
         return i
 
 
-def get_last_bracket_index(i: int, lines: list, stack: list, pattern: str, sign: str) -> int:
+def get_last_bracket_index(i: int, lines: list, pattern: str, sign: str) -> int:
     """Get the last index, if bracket cross multiple lines.
 
     Args:
         i: Index of file line.
         lines: File content list.
-        stack: Template stack for getting last bracket line.
         pattern: Regex pattern to get bracket.
         sign: Start symbol, i.e., "(", "{", "[".
 
     Returns:
         Last index.
     """
+    stack = []
     # Find brackets. if brackets close in-line, return index.
     brackets = re.findall(pattern, lines[i])
     for b in brackets:
