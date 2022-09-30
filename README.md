@@ -1,4 +1,5 @@
 # PyObfuscator
+python code obfuscator, you can obfuscate a file or an entire project.
 
 # Install
 ```bash

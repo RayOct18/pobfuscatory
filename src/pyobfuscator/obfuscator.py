@@ -6,6 +6,7 @@ import random
 import string
 import logging
 from collections import deque
+from typing import IO
 
 
 def generate_random_string(
@@ -14,9 +15,9 @@ def generate_random_string(
     """Generate random string.
 
     Args:
-        strings: this strings must fits rules for python variables.
-        minimum: minimum length of random string.
-        maximum: maximum length of random string.
+        strings: This strings must fits rules for python variables.
+        minimum: Minimum length of random string.
+        maximum: Maximum length of random string.
 
     Returns:
         The length of random string is between {start} and {end}.
@@ -30,10 +31,10 @@ def collect_library_keyword(extras: set = None) -> set:
     """Collect all keywords from other library for preserving the raw name.
 
     Args:
-        extras: the import libraries set.
+        extras: The import libraries set.
 
     Returns:
-        the set of import library keywords.
+        The set of import library keywords.
     """
     seen = set()
     # initial queue
@@ -70,15 +71,15 @@ class Keys:
     """Store and process keywords.
 
     Attributes:
-        mapping_table: raw-random keyword pair for converting code to obfuscated.
-        unique_str: store random keyword, prevent reusing the keyword.
-        change_keys: key will be obfuscate in this set.
-        import_key: import library set from source code.
-        special_key: key in this set will be preserve.
-        test_path_map: source-target path pair for unit test.
+        mapping_table: Raw-random keyword pair for converting code to obfuscated.
+        unique_str: Store random keyword, prevent reusing the keyword.
+        change_keys: Key will be obfuscate in this set.
+        import_key: Import library set from source code.
+        special_key: Key in this set will be preserve.
+        test_path_map: Source-target path pair for unit test.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.mapping_table = {"source": "generated"}
         self.unique_str = set()
 
@@ -88,8 +89,8 @@ class Keys:
 
         self.test_path_map = {}
 
-    def init(self, exclude_keys, target):
-        """lazy initialize, add key to special_key set"""
+    def init(self, exclude_keys: list, target: str) -> None:
+        """Lazy initialize, add key to special_key set"""
         self.special_key = {
             "__init__",
             "self",
@@ -105,19 +106,19 @@ class Keys:
             "f",
         }
         # add exclude keys
-        if isinstance(exclude_keys, (list, tuple)):
+        if isinstance(exclude_keys, list):
             for key in exclude_keys:
                 self.special_key.add(key)
         # add target folder
         for key in os.path.normpath(target).split(os.sep):
             self.special_key.add(key)
 
-    def collect_library_key(self):
+    def collect_library_key(self) -> None:
         keyword = collect_library_keyword(self.import_key)
         self.special_key.update(keyword)
 
-    def update_mapping_table(self):
-        """update raw-random pair string to mapping_table"""
+    def update_mapping_table(self) -> None:
+        """Update raw-random pair string to mapping_table"""
         for func_name in self.change_keys:
             if (
                 func_name not in self.mapping_table
@@ -131,7 +132,23 @@ class Keys:
 
 
 class Obfuscator:
-    def __init__(self, args):
+    """Obfuscator class
+
+    This class takes three steps.
+    1. scan code from source, and generate random obfuscated keys.
+    2. convert source code to target obfuscated code.
+    3. remote the empty folder in target.
+
+    Attributes:
+        source: Source code path waiting to be obfuscated.
+        target: Target path to save obfuscated code.
+        keys: Store and process keywords class.
+        root: Last folder name of source path.
+        probability: Probability of confuse line insertion (between 0.0 ~ 1.0)
+        repeat: Maximum confuse line insertion number at same place (greater than 0)
+    """
+
+    def __init__(self, args) -> None:
         self.source = os.path.normpath(args.source)
         self.target = os.path.normpath(args.target)
         self.keys = Keys()
@@ -140,7 +157,7 @@ class Obfuscator:
         self.probability = args.probability
         self.repeat = args.repeat
 
-    def obfuscate(self):
+    def obfuscate(self) -> None:
         scan = Scan(self.root, self.keys)
         # scan all files
         self._process(scan.run)
@@ -161,10 +178,10 @@ class Obfuscator:
         )
         if self.target:
             sp = self.source.split(os.sep)
-            self.source = os.path.join(self.target, *sp[sp.index(self.root) + 1 :])
-        clean_empty_folder(self.source)
+            self.target = os.path.join(self.target, *sp[sp.index(self.root) + 1 :])
+        clean_empty_folder(self.target)
 
-    def _process(self, func):
+    def _process(self, func) -> None:
         if self.source.endswith(".py"):
             file_dir = self.source
             func(file_dir)
@@ -175,22 +192,47 @@ class Obfuscator:
                     func(file_dir)
 
 
+def clean_empty_folder(root: str) -> None:
+    folders = list(os.walk(root))
+    for folder in folders:
+        if folder[0] != root:
+            clean_empty_folder(folder[0])
+        try:
+            os.rmdir(folder[0])
+        except OSError:
+            pass
+    # clean root folder
+    if folders:
+        try:
+            os.rmdir(folders[0][0])
+        except (FileNotFoundError, OSError):
+            pass
+
+
 class Scan:
-    def __init__(self, project, keys):
-        self.project = project
+    """Base class of scan file"""
+    def __init__(self, root: str, keys: Keys) -> None:
+        self.root = root
         self.keys = keys
 
-    def _scan_external(self, file_dir):
+    def _scan_external(self, file_dir: str) -> None:
+        """Get the folder name after the root string, add to change key
+        Example:
+            root = 'project'
+            file_dir = ./test/project/path/test.py
+            modules = [path]
+        """
         split_path = file_dir.split(os.sep)
         filename = os.path.splitext(split_path.pop())[0]
         try:
-            modules = split_path[split_path.index(self.project) + 1 :]
+            modules = split_path[split_path.index(self.root) + 1:]
             for module in modules + [filename]:
                 self.keys.change_keys.add(module)
         except ValueError:
             pass
 
-    def run(self, file_dir):
+    def run(self, file_dir: str) -> None:
+        """open file and run through sub-class"""
         if file_dir.endswith(".py"):
             self._scan_external(file_dir)
 
@@ -199,15 +241,16 @@ class Scan:
                 while line:
                     logging.debug(f"{file_dir}, {line}")
                     for subclass in Scan.__subclasses__():
-                        subclass(self.project, self.keys)._execute(line, f)
+                        subclass(self.root, self.keys)._execute(line, f)
                     line = f.readline()
 
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
         raise NotImplementedError
 
 
 class ScanPyFunc(Scan):
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
+        """Scan function name and function argument, add to change key."""
         is_def = line.strip().split()
         if is_def and is_def[0] == "def":
             line = line.replace(" ", "")
@@ -231,7 +274,8 @@ class ScanPyFunc(Scan):
 
 
 class ScanPyVar(Scan):
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
+        """Scan variable, add to change key."""
         line = line.replace(" ", "")
         if (
             "=" in line
@@ -257,14 +301,15 @@ class ScanPyVar(Scan):
                 self.keys.change_keys.add(var)
 
     @staticmethod
-    def _is_equal_in_parentheses(line):
+    def _is_equal_in_parentheses(line: str) -> bool:
         if "(" in line and line.index("(") < line.index("="):
             return True
         return False
 
 
 class ScanPyClass(Scan):
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
+        """Scan class name and class argument, add to change key."""
         line = line.replace(" ", "")
         if line.startswith("class"):
             cls = line.strip()[5:]
@@ -279,12 +324,13 @@ class ScanPyClass(Scan):
 
 
 class ScanImport(Scan):
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
+        """Scan import library, add to special and import key."""
         line = line.strip()
         # get library name
         line_split = line.split()
         if line_split and line_split[0] in ("import", "from"):
-            if line_split[1].startswith(".") or line_split[1].startswith(self.project):
+            if line_split[1].startswith(".") or line_split[1].startswith(self.root):
                 return
             all_words = re.findall(r"(\w+)", line)
             for w in all_words:
@@ -295,7 +341,8 @@ class ScanImport(Scan):
 
 
 class ScanString(Scan):
-    def _execute(self, line, f):
+    def _execute(self, line: str, f: IO) -> None:
+        """Scan string in code, add to special key"""
         line = line.strip()
         strings = re.findall(r'"(.+?)"', line) + re.findall(r"'(.+?)'", line)
         for s in strings:
@@ -303,7 +350,8 @@ class ScanString(Scan):
                 self.keys.special_key.add(w)
 
 
-def convert(file_dir, root, keys, target=None, probability=1, repeat=1):
+def convert(file_dir: str, root: str, keys: Keys, target: str, probability: float = 1.0, repeat: int = 1) -> None:
+    """Convert source code to obfuscated code."""
     target_dir = file_dir
     if target:
         sp = file_dir.split(os.sep)
@@ -312,54 +360,103 @@ def convert(file_dir, root, keys, target=None, probability=1, repeat=1):
     folder = f"{os.sep}".join(target_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     if file_dir.endswith(".py"):
+        # change raw key to random key by mapping_table
         lines = replace(file_dir, keys, probability, repeat)
+        # save obfuscated file to target_dir
         with open(target_dir, "w", encoding="utf-8") as f:
             f.writelines(lines)
     else:
         try:
+            # copy non-py file to target_dir
             shutil.copy(file_dir, target_dir)
         except shutil.SameFileError:
             pass
+    # rename raw file name to random name by mapping_table
     rename_file(file_dir, target_dir, keys)
 
 
-def get_last_bracket_index(i, lines, stack, pattern, sign):
-    brackets = re.findall(pattern, lines[i])
-    for b in brackets:
-        if b == sign:
-            stack.append(b)
-        else:
-            try:
-                stack.pop()
-            except IndexError:
-                return i
+def replace(file_dir: str, keys: Keys, probability: float = 1.0, repeat: int = 1) -> list:
+    with open(file_dir, "r", encoding="utf-8") as f:
+        lines = f.readlines()
 
-    while stack:
+    for i in range(len(lines)):
+        # replace raw key to random key
+        replace_keys(i, lines, keys)
+
+        remove_single_comment(i, lines)
+        remove_multi_line_comment(i, lines)
+
+    i = 0
+    bracket_stack = []
+    confuse_cache = []
+    while i < len(lines):
+        i = generate_confuse_line(
+            i, lines, confuse_cache, bracket_stack, probability, repeat
+        )
         i += 1
-        brackets = re.findall(pattern, lines[i])
-        for b in brackets:
-            if b == sign:
-                stack.append(b)
-            else:
-                stack.pop()
-    return i
+    insert_confuse_line(lines, confuse_cache)
+
+    return lines
 
 
-def generate_confuse_line(i, lines, cache, stack, probability=1, repeat=1):
+def replace_keys(i: int, lines: list, keys: Keys) -> None:
+    line = lines[i]
+    for k, v in keys.mapping_table.items():
+        logging.debug(f"line: {line}, K: {k}, V: {v}")
+        line = regex_replace(line, k, v)
+        line = line.replace(v + "@", k)  # undo template replace
+    lines[i] = line
+
+
+def remove_single_comment(i: int, lines: list) -> None:
+    line = lines[i].strip()
+    if line.startswith("#"):
+        lines[i] = ""
+
+
+def remove_multi_line_comment(i: int, lines: list) -> None:
+    line = lines[i].strip()
+    if len(line) > 3 and line.startswith('"""') and line.endswith('"""'):
+        lines[i] = ""
+    elif line.startswith('"""'):
+        lines[i] = ""
+        while not lines[i].strip().endswith('"""'):
+            lines[i] = ""
+            i += 1
+        lines[i] = ""
+
+
+def generate_confuse_line(i: int, lines: list, cache: list, stack: list, probability: float = 1.0, repeat: int = 1) -> int:
+    """Generate confuse line list for inserting at obfuscated code
+
+    Args:
+        i: Index of file line.
+        lines: File content list.
+        cache: Confuse line list.
+        stack: Template stack for getting last bracket line.
+        probability: Probability of confuse line insertion (between 0.0 ~ 1.0)
+        repeat: Maximum confuse line insertion number at same place (greater than 0)
+
+    Returns:
+        File line index.
+    """
     try:
-        # pass line can not insert confuse string
+        # pass line can not insert confuse string.
+        # "()" cross multiple line.
         pattern = r"\(|\)"
         if re.findall(pattern, lines[i]):
             i = get_last_bracket_index(i, lines, stack, pattern, "(")
             last = re.findall(pattern, lines[i])
             if lines[i].strip().startswith("def") or last[0] == ")":
                 return i
+        # "{}" cross multiple line.
         pattern = r"\{|\}"
         if re.findall(pattern, lines[i]):
             i = get_last_bracket_index(i, lines, stack, pattern, "{")
             last = re.findall(pattern, lines[i])
             if last[0] == "}":
                 return i
+        # "[]" cross multiple line.
         pattern = r"\[|\]"
         if re.findall(pattern, lines[i]):
             i = get_last_bracket_index(i, lines, stack, pattern, "[")
@@ -368,11 +465,12 @@ def generate_confuse_line(i, lines, cache, stack, probability=1, repeat=1):
                 return i
         if i >= len(lines):
             return i
+        # special keyword can not insert confuse line above the code.
         bypass = lines[i].strip()
         if (
-            bypass == ""
-            or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
-            or bypass.endswith(("'", '"'))
+                bypass == ""
+                or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
+                or bypass.endswith(("'", '"'))
         ):
             return i
 
@@ -390,7 +488,43 @@ def generate_confuse_line(i, lines, cache, stack, probability=1, repeat=1):
         return i
 
 
-def insert_confuse_line(lines, cache):
+def get_last_bracket_index(i: int, lines: list, stack: list, pattern: str, sign: str) -> int:
+    """Get the last index, if bracket cross multiple lines.
+
+    Args:
+        i: Index of file line.
+        lines: File content list.
+        stack: Template stack for getting last bracket line.
+        pattern: Regex pattern to get bracket.
+        sign: Start symbol, i.e., "(", "{", "[".
+
+    Returns:
+        Last index.
+    """
+    # Find brackets. if brackets close in-line, return index.
+    brackets = re.findall(pattern, lines[i])
+    for b in brackets:
+        if b == sign:
+            stack.append(b)
+        else:
+            try:
+                stack.pop()
+            except IndexError:
+                return i
+
+    # If brackets cross multiple line, then find the last close bracket.
+    while stack:
+        i += 1
+        brackets = re.findall(pattern, lines[i])
+        for b in brackets:
+            if b == sign:
+                stack.append(b)
+            else:
+                stack.pop()
+    return i
+
+
+def insert_confuse_line(lines: list, cache: list) -> list:
     cnt = 0
     for i, v in cache:
         lines.insert(i + cnt, v)
@@ -398,60 +532,12 @@ def insert_confuse_line(lines, cache):
     return lines
 
 
-def replace(file_dir, keys, probability=1, repeat=1):
-    with open(file_dir, "r", encoding="utf-8") as f:
-        lines = f.readlines()
-
-    for i in range(len(lines)):
-        replace_keys(i, lines, keys)
-        remove_single_comment(i, lines)
-        remove_multi_line_comment(i, lines)
-
-    i = 0
-    bracket_stack = []
-    confuse_cache = []
-    while i < len(lines):
-        i = generate_confuse_line(
-            i, lines, confuse_cache, bracket_stack, probability, repeat
-        )
-        i += 1
-    insert_confuse_line(lines, confuse_cache)
-
-    return lines
-
-
-def replace_keys(i, lines, keys):
-    line = lines[i]
-    for k, v in keys.mapping_table.items():
-        logging.debug(f"line: {line}, K: {k}, V: {v}")
-        line = regex_replace(line, k, v)
-        line = line.replace(v + "@", k)  # undo template replace
-    lines[i] = line
-
-
-def remove_single_comment(i, lines):
-    line = lines[i].strip()
-    if line.startswith("#"):
-        lines[i] = ""
-
-
-def remove_multi_line_comment(i, lines):
-    line = lines[i].strip()
-    if len(line) > 3 and line.startswith('"""') and line.endswith('"""'):
-        lines[i] = ""
-    elif line.startswith('"""'):
-        lines[i] = ""
-        while not lines[i].strip().endswith('"""'):
-            lines[i] = ""
-            i += 1
-        lines[i] = ""
-
-
-def regex_replace(line, source, target):
+def regex_replace(line: str, source: str, target: str) -> str:
+    """replace word to target (whole word only and match case)"""
     return re.sub(rf"\b{source}\b", target, line)
 
 
-def rename_file(file_dir, target_dir, keys):
+def rename_file(file_dir: str, target_dir: str, keys: Keys) -> None:
     obfuscate_dir = target_dir.split(os.sep)
     for i, d in enumerate(obfuscate_dir):
         if d.endswith(".py"):
@@ -463,26 +549,12 @@ def rename_file(file_dir, target_dir, keys):
         obfuscate_dir = (
             obfuscate_dir if obfuscate_dir.endswith(".py") else obfuscate_dir + ".py"
         )
+
     folder = f"{os.sep}".join(obfuscate_dir.split(os.sep)[:-1])
     os.makedirs(folder, exist_ok=True)
     os.rename(target_dir, obfuscate_dir)
+
+    # for unit test
     keys.test_path_map.update(
         {os.path.abspath(file_dir): os.path.abspath(obfuscate_dir)}
     )
-
-
-def clean_empty_folder(root):
-    folders = list(os.walk(root))
-    for folder in folders:
-        if folder[0] != root:
-            clean_empty_folder(folder[0])
-        try:
-            os.rmdir(folder[0])
-        except OSError:
-            pass
-    # clean root folder
-    if folders:
-        try:
-            os.rmdir(folders[0][0])
-        except (FileNotFoundError, OSError):
-            pass

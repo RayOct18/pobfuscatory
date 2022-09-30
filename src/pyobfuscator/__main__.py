@@ -48,7 +48,7 @@ if __name__ == "__main__":
         "--repeat",
         type=int,
         default=5,
-        help="Maximum insert number at same place",
+        help="Maximum confuse line insertion number at same place",
     )
     args = parser.parse_args()
 
