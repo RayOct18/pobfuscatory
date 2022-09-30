@@ -4,7 +4,7 @@ import shutil
 import inspect
 from importlib.machinery import SourceFileLoader
 
-from pyobfuscator.obfuscator import Obfuscator, clean_empty_folder
+from pobfuscatory.obfuscator import Obfuscator, clean_empty_folder
 from source.package import foo
 from source.classes import A, B, C
 from source import function, comment, multi_comment, special_arg, imports, case

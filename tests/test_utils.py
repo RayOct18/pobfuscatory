@@ -1,4 +1,4 @@
-from pyobfuscator.obfuscator import collect_library_keyword
+from pobfuscatory.obfuscator import collect_library_keyword
 
 
 def test_collect_keyword():

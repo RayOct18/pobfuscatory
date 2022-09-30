@@ -1,4 +1,4 @@
-from pyobfuscator import obfuscator
+from pobfuscatory import obfuscator
 
 
 def test_scan_import_project_name():

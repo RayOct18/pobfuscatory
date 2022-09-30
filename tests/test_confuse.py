@@ -1,4 +1,4 @@
-from pyobfuscator.obfuscator import (
+from pobfuscatory.obfuscator import (
     generate_confuse_line,
     insert_confuse_line,
     get_last_bracket_index,
