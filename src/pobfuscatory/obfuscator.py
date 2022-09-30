@@ -212,6 +212,7 @@ def clean_empty_folder(root: str) -> None:
 
 class Scan:
     """Base class of scan file"""
+
     def __init__(self, root: str, keys: Keys) -> None:
         self.root = root
         self.keys = keys
@@ -226,7 +227,7 @@ class Scan:
         split_path = file_dir.split(os.sep)
         filename = os.path.splitext(split_path.pop())[0]
         try:
-            modules = split_path[split_path.index(self.root) + 1:]
+            modules = split_path[split_path.index(self.root) + 1 :]
             for module in modules + [filename]:
                 self.keys.change_keys.add(module)
         except ValueError:
@@ -267,10 +268,12 @@ class ScanPyFunc(Scan):
             except ValueError:
                 while not func.strip().endswith(":"):
                     for arg in func[pare_start + 1 :].strip().split(","):
-                        self.keys.change_keys.add(arg.split("=")[0].strip().split(":")[0])
+                        self.keys.change_keys.add(
+                            arg.split("=")[0].strip().split(":")[0]
+                        )
                     pare_start = -1
                     func = f.readline().replace(" ", "")
-                for arg in func[:func.index(")")].split(","):
+                for arg in func[: func.index(")")].split(","):
                     self.keys.change_keys.add(arg.split("=")[0].strip())
 
 
@@ -351,7 +354,14 @@ class ScanString(Scan):
                 self.keys.special_key.add(w)
 
 
-def convert(file_dir: str, root: str, keys: Keys, target: str, probability: float = 1.0, repeat: int = 1) -> None:
+def convert(
+    file_dir: str,
+    root: str,
+    keys: Keys,
+    target: str,
+    probability: float = 1.0,
+    repeat: int = 1,
+) -> None:
     """Convert source code to obfuscated code."""
     target_dir = file_dir
     if target:
@@ -376,7 +386,9 @@ def convert(file_dir: str, root: str, keys: Keys, target: str, probability: floa
     rename_file(file_dir, target_dir, keys)
 
 
-def replace(file_dir: str, keys: Keys, probability: float = 1.0, repeat: int = 1) -> list:
+def replace(
+    file_dir: str, keys: Keys, probability: float = 1.0, repeat: int = 1
+) -> list:
     with open(file_dir, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -390,9 +402,7 @@ def replace(file_dir: str, keys: Keys, probability: float = 1.0, repeat: int = 1
     i = 0
     confuse_cache = []
     while i < len(lines):
-        i = generate_confuse_line(
-            i, lines, confuse_cache, probability, repeat
-        )
+        i = generate_confuse_line(i, lines, confuse_cache, probability, repeat)
         i += 1
     insert_confuse_line(lines, confuse_cache)
 
@@ -426,7 +436,9 @@ def remove_multi_line_comment(i: int, lines: list) -> None:
         lines[i] = ""
 
 
-def generate_confuse_line(i: int, lines: list, cache: list, probability: float = 1.0, repeat: int = 1) -> int:
+def generate_confuse_line(
+    i: int, lines: list, cache: list, probability: float = 1.0, repeat: int = 1
+) -> int:
     """Generate confuse line list for inserting at obfuscated code
 
     Args:
@@ -467,9 +479,9 @@ def generate_confuse_line(i: int, lines: list, cache: list, probability: float =
         # special keyword can not insert confuse line above the code.
         bypass = lines[i].strip()
         if (
-                bypass == ""
-                or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
-                or bypass.endswith(("'", '"'))
+            bypass == ""
+            or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
+            or bypass.endswith(("'", '"'))
         ):
             return i
 
