@@ -1,6 +1,6 @@
 # TODO
-- [ ] write document
 - [ ] remove comment in-line
+- [x] write document
 - [x] insert confuse code
 - [ ] ~~preserve file name~~
 - [x] fix remove comment bug (print("# HI"))
