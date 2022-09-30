@@ -1,3 +1,22 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "pobfuscatory"
+version = "0.0.1"
+authors = [
+    { name="Rui-Cang Xie", email="birken1018@gmail.com" },
+]
+description = "python code obfuscator"
+readme = "README.md"
+requires-python = ">=3.6"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/RayOct18/pobfuscatory"
+"Bug Tracker" = "https://github.com/RayOct18/pobfuscatory/issues"

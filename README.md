@@ -3,7 +3,7 @@ python code obfuscator, you can obfuscate a file or an entire project.
 
 # Install
 ```bash
-pip install git+https://github.com/RayOct18/pobfuscatory
+pip install pobfuscatory
 ```
 
 # Usage

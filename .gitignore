@@ -4,3 +4,4 @@ __py
 !tests/source/pycache/__pycache__
 build
 *.py[cod]
+dist
