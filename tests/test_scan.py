@@ -64,3 +64,11 @@ def test_scan_var():
     line = 're.fullmatch, string=component["kb_model"]'
     scan._execute(line, None)
     assert len(keys.change_keys) == 0
+
+
+def test_scan_class_statement():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanPyClass("source", keys)
+    line = 'classes_in_img = list(set(bboxes[:, 5]))'
+    scan._execute(line, None)
+    assert len(keys.change_keys) == 0

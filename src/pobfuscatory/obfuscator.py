@@ -253,28 +253,28 @@ class Scan:
 class ScanPyFunc(Scan):
     def _execute(self, line: str, f: IO) -> None:
         """Scan function name and function argument, add to change key."""
-        is_def = line.strip().split()
-        if is_def and is_def[0] == "def":
-            line = line.replace(" ", "")
-            func = line[3:]
-            pare_start = func.index("(")
-            func_name = func[:pare_start]
-            self.keys.change_keys.add(func_name)
+        keywords = get_keyword_list(line)
+        if keywords and keywords[0] == "def":
+            self.keys.change_keys.add(keywords[1])
 
             try:
-                pare_end = func.index(")")
-                for arg in func[pare_start + 1 : pare_end].split(","):
-                    self.keys.change_keys.add(arg.split("=")[0].strip())
+                pare_start = line.index("(")
+                pare_end = line.index("):")
+                for arg in line[pare_start + 1 : pare_end].split(","):
+                    self._add_keyword_to_change_keys(arg)
             except ValueError:
-                while not func.strip().endswith(":"):
-                    for arg in func[pare_start + 1 :].strip().split(","):
-                        self.keys.change_keys.add(
-                            arg.split("=")[0].strip().split(":")[0]
-                        )
+                while not line.strip().endswith(":"):
+                    for arg in line[pare_start + 1 :].strip().split(","):
+                        self._add_keyword_to_change_keys(arg)
                     pare_start = -1
-                    func = f.readline().replace(" ", "")
-                for arg in func[: func.index(")")].split(","):
-                    self.keys.change_keys.add(arg.split("=")[0].strip())
+                    line = f.readline()
+                for arg in line[: line.index(")")].split(","):
+                    self._add_keyword_to_change_keys(arg)
+
+    def _add_keyword_to_change_keys(self, line: str) -> None:
+        keywords = get_keyword_list(line)
+        if keywords:
+            self.keys.change_keys.add(keywords[0])
 
 
 class ScanPyVar(Scan):
@@ -313,18 +313,11 @@ class ScanPyVar(Scan):
 
 class ScanPyClass(Scan):
     def _execute(self, line: str, f: IO) -> None:
-        """Scan class name and class argument, add to change key."""
-        line = line.replace(" ", "")
-        if line.startswith("class"):
-            cls = line.strip()[5:]
-            try:
-                pare_start, pare_end = cls.index("("), cls.index(")")
-                for func_name in cls[pare_start + 1 : pare_end].split(","):
-                    self.keys.change_keys.add(func_name)
-            except ValueError:
-                pare_start, pare_end = -1, -1
-            func_name = cls[:pare_start]
-            self.keys.change_keys.add(func_name)
+        """Scan class name and super class name, add to change key."""
+        keywords = get_keyword_list(line)
+        if keywords and keywords[0].startswith("class") and line.strip().endswith(":"):
+            for func_name in keywords[1:]:
+                self.keys.change_keys.add(func_name)
 
 
 class ScanImport(Scan):
@@ -341,7 +334,10 @@ class ScanImport(Scan):
                 self.keys.special_key.add(w)
                 self.keys.import_key.add(w)
             if not line_split[1].startswith("."):
-                exec(line)
+                try:
+                    exec(line)
+                except ModuleNotFoundError as e:
+                    logging.warning(f"Run module error: {e}")
 
 
 class ScanString(Scan):
@@ -545,7 +541,12 @@ def insert_confuse_line(lines: list, cache: list) -> list:
 
 def regex_replace(line: str, source: str, target: str) -> str:
     """replace word to target (whole word only and match case)"""
+    logging.debug(f"Line: {line}; Replace {source} to {target}")
     return re.sub(rf"\b{source}\b", target, line)
+
+
+def get_keyword_list(line: str) -> str:
+    return re.findall(r"\b\w+\b", line)
 
 
 def rename_file(file_dir: str, target_dir: str, keys: Keys) -> None:
