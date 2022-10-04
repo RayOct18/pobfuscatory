@@ -327,17 +327,24 @@ class ScanImport(Scan):
         # get library name
         line_split = line.split()
         if line_split and line_split[0] in ("import", "from"):
-            if line_split[1].startswith(".") or line_split[1].startswith(self.root):
+            if line_split[1].startswith(".") or line_split[1].startswith(self.root) or\
+                    (line_split[0] == "import" and len(line_split) > 2):
                 return
-            all_words = re.findall(r"(\w+)", line)
-            for w in all_words:
-                self.keys.special_key.add(w)
-                self.keys.import_key.add(w)
-            if not line_split[1].startswith("."):
-                try:
-                    exec(line)
-                except ModuleNotFoundError as e:
-                    logging.warning(f"Run module error: {e}")
+
+            while True:
+                all_words = re.findall(r"(\w+)", line)
+                for w in all_words:
+                    self.keys.special_key.add(w)
+                    self.keys.import_key.add(w)
+                if not line_split[1].startswith("."):
+                    try:
+                        exec(line)
+                    except ModuleNotFoundError as e:
+                        logging.warning(f"Run module error: {e}")
+                    except SyntaxError:
+                        line += f.readline().strip()
+                        continue
+                    return
 
 
 class ScanString(Scan):

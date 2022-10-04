@@ -1,6 +1,16 @@
 from pobfuscatory import obfuscator
 
 
+class File:
+    def __init__(self, lines):
+        self.i = 0
+        self.lines = lines
+
+    def readline(self):
+        self.i += 1
+        return self.lines[self.i]
+
+
 def test_scan_import_project_name():
     keys = obfuscator.Keys()
     scan = obfuscator.ScanImport("source", keys)
@@ -40,6 +50,25 @@ def test_scan_import_os_all():
     scan._execute(line, None)
     keys.collect_library_key()
     assert "path" in keys.special_key
+
+
+def test_scan_import_multiple_line():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanImport("source", keys)
+    lines = ["from shutil import (\n", "copy, move,\n", ")\n"]
+    scan._execute(lines[0], File(lines))
+    keys.collect_library_key()
+    assert "copy" in keys.special_key
+    assert "move" in keys.special_key
+
+
+def test_scan_import_in_docs():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanImport("source", keys)
+    line = "import library and run test"
+    scan._execute(line, None)
+    assert len(keys.change_keys) == 0
+    assert len(keys.import_key) == 0
 
 
 def test_scan_string_dict():
