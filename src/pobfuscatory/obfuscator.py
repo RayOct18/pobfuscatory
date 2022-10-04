@@ -150,10 +150,10 @@ class Obfuscator:
     """
 
     def __init__(self, args) -> None:
-        self.source = os.path.normpath(args.source)
-        self.target = os.path.normpath(args.target)
+        self.source = os.path.normpath(os.path.abspath(args.source))
+        self.target = os.path.normpath(os.path.abspath(args.target))
         self.keys = Keys()
-        self.root = os.path.basename(os.path.dirname(self.source))
+        self.root = os.path.basename(os.path.dirname(os.path.abspath(self.source)))
         self.keys.init(args.exclude_keys, self.target)
         self.probability = args.probability
         self.repeat = args.repeat
