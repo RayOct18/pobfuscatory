@@ -490,7 +490,7 @@ def generate_confuse_line(
         bypass = lines[i].strip()
         if (
             bypass == ""
-            or bypass.startswith(("'", '"', "elif", "else", "except", "@"))
+            or bypass.startswith(("'", '"', "elif", "else", "except", "@", "def", "class"))
             or bypass.endswith(("'", '"'))
         ):
             return i
