@@ -327,8 +327,13 @@ class ScanImport(Scan):
         # get library name
         line_split = line.split()
         if line_split and line_split[0] in ("import", "from"):
-            if line_split[1].startswith(".") or line_split[1].startswith(self.root) or\
-                    (line_split[0] == "import" and len(line_split) > 2):
+            # TODO: Needs refactor
+            # 1. pass import self-project
+            # 2. pass import error
+            # 3. pass non-word in docstring (expect ',', '.', '(', ')')
+            if line_split[1].startswith(".") or line_split[1].startswith(self.root) or \
+                    (line_split[0] == "import" and len(line_split) > 2) or \
+                    set(re.findall(r'[^\w.,()\s]', line)):
                 return
 
             while True:

@@ -62,10 +62,19 @@ def test_scan_import_multiple_line():
     assert "move" in keys.special_key
 
 
-def test_scan_import_in_docs():
+def test_scan_import_in_docs_1():
     keys = obfuscator.Keys()
     scan = obfuscator.ScanImport("source", keys)
     line = "import library and run test"
+    scan._execute(line, None)
+    assert len(keys.change_keys) == 0
+    assert len(keys.import_key) == 0
+
+
+def test_scan_import_in_docs_2():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanImport("source", keys)
+    line = "from :meth:`_make_session_factory`. The result is available as :attr:`session`"
     scan._execute(line, None)
     assert len(keys.change_keys) == 0
     assert len(keys.import_key) == 0
