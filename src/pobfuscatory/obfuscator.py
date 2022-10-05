@@ -258,16 +258,18 @@ class ScanPyFunc(Scan):
             self.keys.change_keys.add(keywords[1])
 
             try:
+                line = line.split("#")[0].strip()
                 pare_start = line.index("(")
-                pare_end = line.index("):")
+                pare_end = line.rindex(":")
                 for arg in line[pare_start + 1 : pare_end].split(","):
-                    self._add_keyword_to_change_keys(arg)
+                    self._add_keyword_to_change_keys(arg.split(":")[0])
             except ValueError:
                 while not line.strip().endswith(":"):
                     for arg in line[pare_start + 1 :].strip().split(","):
                         self._add_keyword_to_change_keys(arg)
                     pare_start = -1
                     line = f.readline()
+                    line = line.split("#")[0].strip()
                 for arg in line[: line.index(")")].split(","):
                     self._add_keyword_to_change_keys(arg)
 
@@ -344,7 +346,7 @@ class ScanImport(Scan):
                 if not line_split[1].startswith("."):
                     try:
                         exec(line)
-                    except ModuleNotFoundError as e:
+                    except (ModuleNotFoundError, ImportError) as e:
                         logging.warning(f"Run module error: {e}")
                     except SyntaxError:
                         line += f.readline().strip()

@@ -110,3 +110,13 @@ def test_scan_class_statement():
     line = 'classes_in_img = list(set(bboxes[:, 5]))'
     scan._execute(line, None)
     assert len(keys.change_keys) == 0
+
+
+def test_scan_function():
+    keys = obfuscator.Keys()
+    scan = obfuscator.ScanPyFunc("source", keys)
+    line = "def _make_session_factory(self, options: dict[str, t.Any]) -> sa.orm.sessionmaker[Session]:  # type: " \
+           "ignore[type-var] "
+    scan._execute(line, None)
+    assert len(keys.change_keys) == 4
+
