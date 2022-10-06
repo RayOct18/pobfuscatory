@@ -333,9 +333,12 @@ class ScanImport(Scan):
             # 1. pass import self-project
             # 2. pass import error
             # 3. pass non-word in docstring (expect ',', '.', '(', ')')
-            if line_split[1].startswith(".") or line_split[1].startswith(self.root) or \
-                    (line_split[0] == "import" and len(line_split) > 2) or \
-                    set(re.findall(r'[^\w.,()\s]', line)):
+            if (
+                line_split[1].startswith(".")
+                or line_split[1].startswith(self.root)
+                or (line_split[0] == "import" and len(line_split) > 2)
+                or set(re.findall(r"[^\w.,()\s]", line))
+            ):
                 return
 
             while True:
@@ -490,7 +493,9 @@ def generate_confuse_line(
         bypass = lines[i].strip()
         if (
             bypass == ""
-            or bypass.startswith(("'", '"', "elif", "else", "except", "@", "def", "class"))
+            or bypass.startswith(
+                ("'", '"', "elif", "else", "except", "@", "def", "class")
+            )
             or bypass.endswith(("'", '"'))
         ):
             return i
